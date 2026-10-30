@@ -26,6 +26,8 @@ class WorkspaceRequestTests(unittest.TestCase):
 
     def setUp(self):
         import httpx
+        from backend.app.workspace import clear_caches
+        clear_caches()
         self.httpx = httpx
         self.env = patch.dict(os.environ, {
             'AUTH_MODE': 'supabase', 'SUPABASE_URL': 'https://example.supabase.co',
@@ -34,10 +36,10 @@ class WorkspaceRequestTests(unittest.TestCase):
         self.env.start()
         self.addCleanup(self.env.stop)
         self.headers = {'Authorization': 'Bearer test-user-token', 'X-Workspace-ID': self.workspace_id}
-        self.auth = patch('backend.app.workspace.httpx.get', return_value=httpx.Response(200, json={
+        self.auth = patch('backend.app.workspace.HTTP.get', return_value=httpx.Response(200, json={
             'id': self.user_id, 'email': 'test@example.com', 'email_confirmed_at': '2026-09-13T00:00:00Z',
         }))
-        self.auth.start()
+        self.auth_mock = self.auth.start()
         self.addCleanup(self.auth.stop)
 
     def database_response(self, method, url, **kwargs):
@@ -51,14 +53,23 @@ class WorkspaceRequestTests(unittest.TestCase):
         return self.httpx.Response(200, json=[{'id': 1, 'workspace_id': self.workspace_id}])
 
     def test_authenticated_state_reads_scoped_tables_with_user_token(self):
-        with patch('backend.app.workspace.httpx.request', side_effect=self.database_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=self.database_response):
             response = TestClient(app).get('/api/state', headers=self.headers)
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(set(response.json()), {'ideas', 'tracks', 'config_presets', 'editing_shortcuts', 'production_sops'})
         self.assertEqual(response.json()['ideas'][0]['workspace_id'], self.workspace_id)
 
+    def test_repeat_requests_reuse_the_verified_session_and_membership(self):
+        with patch('backend.app.workspace.HTTP.request', side_effect=self.database_response) as database:
+            client = TestClient(app)
+            for _ in range(3):
+                self.assertEqual(client.get('/api/state', headers=self.headers).status_code, 200)
+        self.assertEqual(self.auth_mock.call_count, 1)
+        member_reads = [call for call in database.call_args_list if call.args[1].endswith('/workspace_members')]
+        self.assertEqual(len(member_reads), 1)
+
     def test_nonmember_remains_forbidden_instead_of_service_unavailable(self):
-        with patch('backend.app.workspace.httpx.request', return_value=self.httpx.Response(200, json=[])):
+        with patch('backend.app.workspace.HTTP.request', return_value=self.httpx.Response(200, json=[])):
             response = TestClient(app).get('/api/state', headers=self.headers)
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -73,7 +84,7 @@ class WorkspaceRequestTests(unittest.TestCase):
                 return self.httpx.Response(200, json=[{'id': 7, 'title': 'Old title'}])
             self.assertEqual(method, 'PATCH')
             return self.httpx.Response(200, json=[{'id': 7, **kwargs['json']}])
-        with patch('backend.app.workspace.httpx.request', side_effect=database_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=database_response):
             response = TestClient(app).patch('/api/tracks/7', headers=self.headers, json={
                 'title': 'New title', 'mood_genre': ' Hài ', 'notes': 'Updated notes',
             })
@@ -82,7 +93,9 @@ class WorkspaceRequestTests(unittest.TestCase):
         self.assertEqual(response.json()['track']['notes'], 'Updated notes')
 
     def test_edit_track_rejects_viewer_and_other_workspace_record(self):
+        from backend.app.workspace import clear_caches
         for role, expected in [('viewer', 403), ('editor', 404)]:
+            clear_caches()
             with self.subTest(role=role):
                 def database_response(method, url, **kwargs):
                     self.assertEqual(method, 'GET')
@@ -90,7 +103,7 @@ class WorkspaceRequestTests(unittest.TestCase):
                         return self.httpx.Response(200, json=[{'role': role}])
                     self.assertEqual(kwargs['params']['workspace_id'], 'eq.' + self.workspace_id)
                     return self.httpx.Response(200, json=[])
-                with patch('backend.app.workspace.httpx.request', side_effect=database_response):
+                with patch('backend.app.workspace.HTTP.request', side_effect=database_response):
                     response = TestClient(app).patch('/api/tracks/7', headers=self.headers, json={'title': 'New title'})
                 self.assertEqual(response.status_code, expected, response.text)
 
@@ -103,7 +116,7 @@ class WorkspaceRequestTests(unittest.TestCase):
             self.assertEqual(kwargs['json']['workspace_id'], self.workspace_id)
             return self.httpx.Response(201, json=[{'id': 100, **kwargs['json']}])
 
-        with patch('backend.app.workspace.httpx.request', side_effect=database_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=database_response):
             response = TestClient(app).post('/api/tracks', headers=self.headers, json={
                 'title': 'Comedy track', 'mood_genre': ' Hài hước ',
             })
@@ -116,7 +129,7 @@ class WorkspaceRequestTests(unittest.TestCase):
         self.assertEqual(response.status_code, 400, response.text)
 
     def test_operations_dependency_resolves_real_user(self):
-        with patch('backend.app.workspace.httpx.request', side_effect=self.database_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=self.database_response):
             response = TestClient(app).get('/api/members', headers=self.headers)
         self.assertEqual(response.status_code, 200, response.text)
 
@@ -143,7 +156,7 @@ class WorkspaceRequestTests(unittest.TestCase):
         }])
 
     def test_workspace_concepts_are_scoped_and_can_be_created(self):
-        with patch('backend.app.workspace.httpx.request', side_effect=self.concepts_database_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=self.concepts_database_response):
             client = TestClient(app)
             listed = client.get('/api/concepts', headers=self.headers)
             created = client.post(
@@ -157,7 +170,7 @@ class WorkspaceRequestTests(unittest.TestCase):
         self.assertEqual(created.json()['concept']['name'], 'Subtitle giữa màn hình')
 
     def test_workspace_concept_name_is_trimmed_and_bounded(self):
-        with patch('backend.app.workspace.httpx.request', side_effect=self.concepts_database_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=self.concepts_database_response):
             client = TestClient(app)
             self.assertEqual(
                 client.post('/api/concepts', headers=self.headers, json={'name': '   '}).status_code,
@@ -195,7 +208,7 @@ class WorkspaceRequestTests(unittest.TestCase):
                 'title': 'Ý tưởng cần duyệt',
             }])
 
-        with patch('backend.app.workspace.httpx.request', side_effect=database_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=database_response):
             client = TestClient(app)
             listed = client.get('/api/pipeline/columns', headers=self.headers)
             updated = client.patch('/api/pipeline/columns', headers=self.headers, json={
@@ -225,7 +238,7 @@ class WorkspaceRequestTests(unittest.TestCase):
             self.assertEqual(kwargs['json']['sort_order'], len([call for call in calls if call[0] == 'PATCH']))
             return self.httpx.Response(200, json=[])
 
-        with patch('backend.app.workspace.httpx.request', side_effect=database_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=database_response):
             response = TestClient(app).patch('/api/pipeline/columns/order', headers=self.headers, json={
                 'statuses': ['custom_review', 'Lên ý tưởng', 'Kịch bản'],
             })
@@ -251,14 +264,14 @@ class WorkspaceRequestTests(unittest.TestCase):
                 **kwargs['json'], 'is_active': True,
             }])
 
-        with patch('backend.app.workspace.httpx.request', side_effect=database_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=database_response):
             response = TestClient(app).post('/api/pipeline/columns', headers=self.headers, json={'title': ' Review '})
         self.assertEqual(response.status_code, 201, response.text)
         self.assertEqual(response.json()['column']['title'], 'Review')
 
     def test_pipeline_column_title_rejects_empty_or_unknown_status(self):
         client = TestClient(app)
-        with patch('backend.app.workspace.httpx.request', return_value=self.httpx.Response(200, json=[{
+        with patch('backend.app.workspace.HTTP.request', return_value=self.httpx.Response(200, json=[{
             'user_id': self.user_id, 'role': 'owner',
         }])):
             self.assertEqual(
@@ -291,7 +304,7 @@ class WorkspaceRequestTests(unittest.TestCase):
                 'workspace_id': self.workspace_id, 'status': 'Edit', 'title': 'Edit', 'is_active': False,
             }])
 
-        with patch('backend.app.workspace.httpx.request', side_effect=database_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=database_response):
             response = TestClient(app).delete('/api/pipeline/columns/Edit', headers=self.headers)
         self.assertEqual(response.status_code, 200, response.text)
         self.assertFalse(response.json()['column']['is_active'])
@@ -304,7 +317,7 @@ class WorkspaceRequestTests(unittest.TestCase):
             self.assertEqual(table, 'ideas')
             return self.httpx.Response(200, json=[{'id': 42, 'status': 'Edit'}])
 
-        with patch('backend.app.workspace.httpx.request', side_effect=database_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=database_response):
             response = TestClient(app).delete('/api/pipeline/columns/Edit', headers=self.headers)
         self.assertEqual(response.status_code, 409, response.text)
 
@@ -315,7 +328,7 @@ class WorkspaceRequestTests(unittest.TestCase):
                 return self.httpx.Response(200, json=[{'user_id': self.user_id, 'role': 'viewer'}])
             self.fail(f'unexpected database request: {method} {url}')
 
-        with patch('backend.app.workspace.httpx.request', side_effect=viewer_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=viewer_response):
             response = TestClient(app).post(
                 '/api/ideas',
                 headers=self.headers,
@@ -347,7 +360,7 @@ class WorkspaceRequestTests(unittest.TestCase):
                 }])
             self.fail(f'unexpected database request: {method} {url}')
 
-        with patch('backend.app.workspace.httpx.request', side_effect=canonical_response):
+        with patch('backend.app.workspace.HTTP.request', side_effect=canonical_response):
             response = TestClient(app).post(
                 '/api/ideas',
                 headers=self.headers,

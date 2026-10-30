@@ -10,6 +10,7 @@ import hmac
 import secrets
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from pathlib import Path
 from typing import Any, Literal, Protocol
@@ -20,7 +21,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from .workspace import current_user, current_workspace, Database, User, Workspace
+from .workspace import clear_caches, current_user, current_workspace, Database, User, Workspace
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -137,6 +138,20 @@ class BrainstormIn(BaseModel):
     @field_validator("platforms")
     @classmethod
     def valid_brainstorm_platforms(cls, values: list[str]) -> list[str]:
+        if len(set(values)) != len(values) or any(value not in PLATFORMS for value in values):
+            raise ValueError("invalid platform")
+        return values
+
+class ExpandIdeaIn(BaseModel):
+    title: str = Field(min_length=1, max_length=240)
+    hook: str = Field(default="", max_length=2000)
+    outline: str = Field(default="", max_length=8000)
+    language: Literal["vi", "en", "ko", "ja", "id", "th", "ms", "fil"] = "vi"
+    platforms: list[str] = Field(default_factory=lambda: ["TikTok"], min_length=1)
+
+    @field_validator("platforms")
+    @classmethod
+    def valid_expand_platforms(cls, values: list[str]) -> list[str]:
         if len(set(values)) != len(values) or any(value not in PLATFORMS for value in values):
             raise ValueError("invalid platform")
         return values
@@ -543,12 +558,15 @@ def invite_member(payload: InviteIn, workspace: Workspace = Depends(ws)):
 @app.patch('/api/members/{user_id}')
 def change_member(user_id: str, payload: MemberRoleIn, workspace: Workspace = Depends(ws)):
     workspace.require('owner','admin')
-    return {'member': workspace.db.rpc('change_workspace_member_role', {'target_workspace': workspace.id, 'target_user': user_id, 'new_role': payload.role})}
+    member = workspace.db.rpc('change_workspace_member_role', {'target_workspace': workspace.id, 'target_user': user_id, 'new_role': payload.role})
+    clear_caches()
+    return {'member': member}
 
 @app.delete('/api/members/{user_id}')
 def remove_member(user_id: str, workspace: Workspace = Depends(ws)):
     workspace.require('owner','admin')
     workspace.db.rpc('remove_workspace_member', {'target_workspace': workspace.id, 'target_user': user_id})
+    clear_caches()
     return {'ok': True}
 
 @app.get('/api/concepts')
@@ -703,7 +721,10 @@ def state(request: Request, _: None = Depends(require_auth), store: Store = Depe
     try:
         workspace = scoped_workspace(request)
         if workspace:
-            return {table: workspace.db.rows(table, workspace.id) for table in TABLES}
+            # Read the five libraries in parallel instead of one Supabase round trip after another.
+            with ThreadPoolExecutor(max_workers=len(TABLES)) as pool:
+                results = pool.map(lambda table: workspace.db.rows(table, workspace.id), TABLES)
+                return dict(zip(TABLES, results))
         return store.state()
     except HTTPException:
         raise
@@ -804,24 +825,46 @@ def update_idea(idea_id: int, patch: dict[str, Any], request: Request, _: None =
         raise
     except Exception as exc: raise HTTPException(503, "Database unavailable. Please retry.") from exc
 
+def ask_llm_json(instructions: str, prompt: str) -> dict[str, Any]:
+    api_key = os.environ.get("LLM_API_KEY", "").strip()
+    if not api_key: raise HTTPException(503, "AI is not configured. Set LLM_API_KEY on the server.")
+    base_url = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+    # JSON mode is rejected unless the input itself mentions JSON.
+    payload = {"model": os.environ.get("LLM_MODEL", "gpt-4.1-mini"), "instructions": instructions, "input": f"{prompt}\n\nAnswer with the JSON object only.", "text": {"format": {"type": "json_object"}}}
+    try:
+        response = httpx.post(f"{base_url}/responses", headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, json=payload, timeout=45); response.raise_for_status(); data = response.json()
+        text = data.get("output_text", "") or "\n".join(content.get("text", "") for item in data.get("output", []) for content in item.get("content", []) if isinstance(content, dict))
+        parsed = json.loads(text)
+        if not isinstance(parsed, dict): raise ValueError("expected a JSON object")
+        return parsed
+    except (httpx.HTTPError, json.JSONDecodeError, ValueError) as exc: raise HTTPException(502, f"AI proxy request failed: {exc}") from exc
+
 @app.post("/api/brainstorm")
 def brainstorm(request: BrainstormIn, http_request: Request, _: None = Depends(require_auth)) -> dict[str, Any]:
     if os.environ.get("SUPABASE_URL"):
         scoped_workspace(http_request)
-    api_key = os.environ.get("LLM_API_KEY", "").strip()
-    if not api_key: raise HTTPException(503, "AI is not configured. Set LLM_API_KEY on the server.")
-    base_url = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1").rstrip("/")
     platform_list = ", ".join(request.platforms)
     language = BRAINSTORM_LANGUAGES[request.language]
     prompt = f"Topic: {request.brief}\nFormat: {request.format}\nLength: {request.duration}\nPlatforms to optimize for: {platform_list}"
-    payload = {"model": os.environ.get("LLM_MODEL", "gpt-4.1-mini"), "instructions": f"You are a multi-platform short-form content strategist. Write every text field in {language}. " + "Return JSON object {ideas:[{title,hook,outline,format,platforms,adaptations}]} with exactly 3 concrete shootable ideas. For each idea include platforms and concise adaptations for TikTok, Instagram Reels, YouTube Shorts, Facebook Reels, LinkedIn, or X when relevant. Do not claim a trend without evidence.", "input": prompt, "text": {"format": {"type": "json_object"}}}
-    try:
-        response = httpx.post(f"{base_url}/responses", headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, json=payload, timeout=45); response.raise_for_status(); data = response.json()
-        text = data.get("output_text", "") or "\n".join(content.get("text", "") for item in data.get("output", []) for content in item.get("content", []) if isinstance(content, dict))
-        parsed = json.loads(text); ideas = parsed.get("ideas")
-        if not isinstance(ideas, list): raise ValueError("missing ideas")
-        return {"ideas": ideas[:3], "source": "ai"}
-    except (httpx.HTTPError, json.JSONDecodeError, ValueError) as exc: raise HTTPException(502, f"AI proxy request failed: {exc}") from exc
+    instructions = f"You are a multi-platform short-form content strategist. Write every text field in {language}. " + "Return JSON object {ideas:[{title,hook,outline,format,platforms,adaptations}]} with exactly 3 concrete shootable ideas. For each idea include platforms and concise adaptations for TikTok, Instagram Reels, YouTube Shorts, Facebook Reels, LinkedIn, or X when relevant. Do not claim a trend without evidence."
+    ideas = ask_llm_json(instructions, prompt).get("ideas")
+    if not isinstance(ideas, list): raise HTTPException(502, "AI proxy request failed: missing ideas")
+    return {"ideas": ideas[:3], "source": "ai"}
+
+@app.post("/api/brainstorm/expand")
+def expand_idea(request: ExpandIdeaIn, http_request: Request, _: None = Depends(require_auth)) -> dict[str, Any]:
+    # Turns a rough idea card into something shootable; the client shows it for review before saving.
+    if os.environ.get("SUPABASE_URL"):
+        scoped_workspace(http_request)
+    language = BRAINSTORM_LANGUAGES[request.language]
+    prompt = f"Idea: {request.title}\nCurrent hook: {request.hook or '-'}\nCurrent notes: {request.outline or '-'}\nPlatforms: {', '.join(request.platforms)}"
+    instructions = f"You are a short-form video script editor. Write every text field in {language}. " + "Keep the creator's idea and any notes they wrote; sharpen it into a video they can film today. Return JSON object {hook, outline, adaptations} where hook is one spoken opening line under 15 words, outline is 4-6 short numbered beats separated by newlines, and adaptations maps each listed platform to one caption line. Do not claim a trend without evidence."
+    result = ask_llm_json(instructions, prompt)
+    hook, outline, adaptations = result.get("hook"), result.get("outline"), result.get("adaptations") or {}
+    if not isinstance(hook, str) or not isinstance(outline, (str, list)) or not isinstance(adaptations, dict):
+        raise HTTPException(502, "AI proxy request failed: unexpected shape")
+    if isinstance(outline, list): outline = "\n".join(str(line) for line in outline)
+    return {"idea": {"hook": hook.strip(), "outline": outline.strip(), "adaptations": {k: str(v) for k, v in adaptations.items() if k in request.platforms}}}
 
 @app.get("/api/brainstorm/history")
 def brainstorm_history(http_request: Request, _: None = Depends(require_auth), store: Store = Depends(get_store)) -> dict[str, Any]:
