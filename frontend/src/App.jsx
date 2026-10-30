@@ -5,7 +5,6 @@ import {
   activePipelineStatuses,
   earliestPlatformPublishDate,
   updateIdeaDraft,
-  filterIdeas as filterIdeasByFields,
   buildBrainstormCopy,
   conceptSuggestions,
   createBrainstormIdeaPayload,
@@ -56,12 +55,6 @@ const fallback = {
   editing_shortcuts: [],
   production_sops: [],
 };
-const EMPTY_COLUMN_FILTER = {
-  query: "",
-  concept: "all",
-  priority: "all",
-  platform: "all",
-};
 const EMPTY_FILTERS = {
   query: "",
   concept: "all",
@@ -69,11 +62,6 @@ const EMPTY_FILTERS = {
   priority: "all",
 };
 
-function makeColumnFilters() {
-  return Object.fromEntries(
-    STATUSES.map((status) => [status, { ...EMPTY_COLUMN_FILTER }]),
-  );
-}
 const STATUS_LABELS = {
   "Lên ý tưởng": {
     vi: "Lên ý tưởng",
@@ -179,6 +167,8 @@ const COPY = {
     platformCaptions: "Caption theo nền tảng",
     expandWithAi: "✦ Phát triển bằng AI",
     quickCapture: "Ghi nhanh ý tưởng",
+    themeDark: "Chuyển sang nền tối",
+    themeLight: "Chuyển sang nền sáng",
     quickCapturePlaceholder: "Vừa nghĩ ra gì? Gõ rồi Enter…",
     quickCaptureAdd: "Thêm vào",
     quickCaptureConcept: "Ghi nhanh",
@@ -291,6 +281,8 @@ const COPY = {
     platformCaptions: "Platform captions",
     expandWithAi: "✦ Expand with AI",
     quickCapture: "Quick capture",
+    themeDark: "Switch to dark theme",
+    themeLight: "Switch to light theme",
     quickCapturePlaceholder: "Got an idea? Type it and press Enter…",
     quickCaptureAdd: "Add to",
     quickCaptureConcept: "Inbox",
@@ -658,6 +650,13 @@ function BrainstormPage({ lang, t, brainstorm, history, aiLoading, brainstormSou
   const [savedIds, setSavedIds] = useState(() => new Map());
   const [targetStatus, setTargetStatus] = useState("");
   const [targetConcept, setTargetConcept] = useState("AI brainstorm");
+  const resultsRef = useRef(null);
+  const wasLoading = useRef(aiLoading);
+  useEffect(() => {
+    // Bring new ideas into view when a generation finishes; the form fills the first screen.
+    if (wasLoading.current && !aiLoading) resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    wasLoading.current = aiLoading;
+  }, [aiLoading]);
   const status = columns.some((column) => column.status === targetStatus) ? targetStatus : columns[0]?.status || "Lên ý tưởng";
   useEffect(() => {
     setDrafts(brainstorm || []);
@@ -692,6 +691,8 @@ function BrainstormPage({ lang, t, brainstorm, history, aiLoading, brainstormSou
           <p>{t("brainstormHint")}</p>
         </div>
       </div>
+      <div className="brainstorm-layout">
+      <div className="brainstorm-main">
       <form
         className="brainstorm-form"
         onSubmit={(event) => {
@@ -757,9 +758,8 @@ function BrainstormPage({ lang, t, brainstorm, history, aiLoading, brainstormSou
           <button type="button" className="secondary-btn" onClick={onRetry} disabled={aiLoading}>{aiLoading ? <><Spinner />{t("generating")}</> : t("retry")}</button>
         </div>
       )}
-      <div className="brainstorm-workspace">
         {drafts.length > 0 && (
-          <div className="brainstorm-results">
+          <div className="brainstorm-results" ref={resultsRef}>
           <div className="result-section-head"><h2>{t("result")}</h2><span>{drafts.length} ideas</span></div>
           <div className="brainstorm-save-bar">
             <label>{t("addToColumn")}
@@ -824,10 +824,11 @@ function BrainstormPage({ lang, t, brainstorm, history, aiLoading, brainstormSou
           ))}
           </div>
         )}
+      </div>
         <aside className="brainstorm-history">
           <div className="result-section-head"><h2>{t("brainstormHistory")}</h2><span>{history.length}</span></div>
           {history.length ? history.slice(0, 8).map((entry) => (
-            <button type="button" className="history-entry" key={entry.id} onClick={() => onRestore(entry)}>
+            <button type="button" className="history-entry" key={entry.id} onClick={() => { onRestore(entry); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }}>
               <strong>{entry.brief}</strong>
               <span>{entry.source === "demo" ? t("demoMode") : formatDateTime(entry.created_at || entry.createdAt, lang)} · {t("restore")}</span>
             </button>
@@ -1082,7 +1083,7 @@ function EditableTable({ ideas, conceptOptions, pipelineTitles, pipelineStatuses
                   <td>
                     <div className="table-platforms">
                       {idea.platforms.map((platform) => (
-                        <PlatformBadge key={platform} platform={platform} compact />
+                        <PlatformBadge key={platform} platform={platform} compact iconOnly />
                       ))}
                     </div>
                   </td>
@@ -1943,6 +1944,7 @@ export default function App() {
   const [detailIdea, setDetailIdea] = useState(null);
   const [pendingOpenIdeaId, setPendingOpenIdeaId] = useState(null);
   const [quickTitle, setQuickTitle] = useState("");
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme === "light" ? "light" : "dark");
   const quickCaptureRef = useRef(null);
   const [returnToIdeaForm, setReturnToIdeaForm] = useState(false);
   const [lang, setLang] = useState(
@@ -1966,7 +1968,6 @@ export default function App() {
   const [selectedIdeaIds, setSelectedIdeaIds] = useState(() => new Set());
   const [draggedIdeaId, setDraggedIdeaId] = useState(null);
   const [draggedColumnStatus, setDraggedColumnStatus] = useState(null);
-  const [columnFilters, setColumnFilters] = useState(makeColumnFilters);
   const [audioFilter, setAudioFilter] = useState({ query: "", mood: "all" });
   const [audioPage, setAudioPage] = useState(1);
   const [ref, setRef] = useState("config");
@@ -2292,7 +2293,6 @@ export default function App() {
   useEffect(() => { setAudioPage(1); }, [audioFilter.query, audioFilter.mood]);
   useEffect(() => { setRefPage(1); }, [ref]);
   useEffect(() => {
-    setColumnFilters(makeColumnFilters());
     setFilters(EMPTY_FILTERS);
     setPlanningFilter("all");
     setSelectedIdeaIds(new Set());
@@ -2322,6 +2322,11 @@ export default function App() {
       setPendingOpenIdeaId(null);
     }
   }, [pendingOpenIdeaId, ideas]);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "light" ? "#f3f4f6" : "#111317");
+    try { localStorage.setItem("content-theme", theme); } catch { /* private mode: theme still applies for this visit */ }
+  }, [theme]);
   useEffect(() => {
     // "N" jumps to quick capture from anywhere on the pipeline, unless the user is typing.
     const onKey = (event) => {
@@ -2476,7 +2481,7 @@ export default function App() {
       filters.priority !== "all" && `P${filters.priority}`,
     ].filter(Boolean);
     const label = parts.join(" · ") || `${t("savedFilters")} ${savedFilters.length + 1}`;
-    const entry = { id: String(Date.now()), label, filters: { ...filters }, columnFilters };
+    const entry = { id: String(Date.now()), label, filters: { ...filters } };
     const next = [entry, ...savedFilters.filter((item) => item.label !== label)].slice(0, 8);
     setSavedFilters(next);
     localStorage.setItem(`pipeline-filters-${workspaceId}`, JSON.stringify(next));
@@ -2486,21 +2491,8 @@ export default function App() {
     const entry = savedFilters.find((item) => item.id === id);
     if (entry) {
       setFilters({ ...EMPTY_FILTERS, ...entry.filters });
-      if (entry.columnFilters) setColumnFilters(entry.columnFilters);
       setPlanningFilter("all");
     }
-  };
-  const updateColumnFilter = (status, key, value) => {
-    setColumnFilters((current) => ({
-      ...current,
-      [status]: { ...(current[status] || EMPTY_COLUMN_FILTER), [key]: value },
-    }));
-  };
-  const clearColumnFilter = (status) => {
-    setColumnFilters((current) => ({
-      ...current,
-      [status]: { ...EMPTY_COLUMN_FILTER },
-    }));
   };
   const tracks = (data.tracks || []).filter(
     (track) =>
@@ -2817,7 +2809,7 @@ export default function App() {
               }}
             >
               <span>{icon}</span>
-              {label}
+              <span className="nav-label">{label}</span>
               {key === "pipeline" && <b>{ideas.length}</b>}
             </button>
           ))}
@@ -2854,6 +2846,15 @@ export default function App() {
             <strong>{nav.find(([key]) => key === view)?.[2]}</strong>
           </div>
           <div className="top-actions">
+            <button
+              type="button"
+              className="icon-btn theme-toggle"
+              onClick={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
+              aria-label={theme === "light" ? t("themeDark") : t("themeLight")}
+              title={theme === "light" ? t("themeDark") : t("themeLight")}
+            >
+              {theme === "light" ? "☾" : "☀"}
+            </button>
             <label className="language-switch">
               <span aria-hidden="true">🌐</span>
               <select
@@ -2890,29 +2891,10 @@ export default function App() {
         </header>
         {view === "pipeline" && (
           <section className="view pipeline-view">
-            <div className="hero-row">
+            <div className="page-header">
               <div>
-                <p className="eyebrow">CONTENT OPERATING SYSTEM</p>
-                <h1>
-                  {lang === "en" ? (
-                    <>
-                      Turn ideas into
-                      <br />
-                      <em>publishable videos.</em>
-                    </>
-                  ) : (
-                    <>
-                      Biến ý tưởng thành
-                      <br />
-                      <em>video có lịch đăng.</em>
-                    </>
-                  )}
-                </h1>
-                <p className="hero-copy">
-                  {lang === "en"
-                    ? "One workspace for ideas, hooks, production, and platform-ready publishing."
-                    : "Một nơi để gom ý tưởng, viết hook, dựng pipeline và giữ quy chuẩn làm nội dung."}
-                </p>
+                <h1>{t("pipeline")}</h1>
+                <p>{lang === "en" ? "Capture ideas, move them to published, and see what is due." : "Ghi ý tưởng, đẩy tới lúc đăng và xem việc sắp đến hạn."}</p>
               </div>
               <div className="page-actions">
                 <button className="secondary-btn import-btn" onClick={() => setImportScope("pipeline")}>
@@ -2923,7 +2905,7 @@ export default function App() {
                 </button>
               </div>
             </div>
-            <div className="metrics-grid">
+            <div className="stat-strip">
               {[
                 [t("processing"), metrics.inProgress, lang === "en" ? "From idea to edit" : "Từ ý tưởng đến edit", "var(--orange)", "all"],
                 [t("published"), metrics.published, lang === "en" ? "Videos live" : "Video đã lên kênh", "var(--lime)", "published"],
@@ -2935,9 +2917,10 @@ export default function App() {
               ].map(([label, value, note, color, filter]) => (
                 <button
                   type="button"
-                  className={`metric ${planningFilter === filter ? "active" : ""}`}
+                  className={`stat ${filter !== "all" && planningFilter === filter ? "active" : ""}`}
                   style={{ "--metric-color": color }}
                   key={label}
+                  title={note}
                   onClick={() => {
                     setPlanningFilter(filter);
                     if (filter === "published") setFilters((current) => ({ ...current, status: "Đã đăng" }));
@@ -2946,14 +2929,14 @@ export default function App() {
                     else setFilters((current) => ({ ...current, status: "all" }));
                   }}
                 >
-                  <span className="metric-label">{label}</span>
-                  <strong className="metric-value">{value}</strong>
-                  <span className="metric-note">{note}</span>
+                  <strong className="stat-value">{value}</strong>
+                  <span className="stat-label">{label}</span>
+                  <span className="stat-note">{note}</span>
                 </button>
               ))}
             </div>
             <section
-              className={`panel pipeline-panel ${pipelineMode === "calendar" ? "calendar-mode" : ""}`}
+              className={`panel pipeline-panel ${pipelineMode}-mode`}
             >
               <div className="panel-head">
                 <div>
@@ -2961,15 +2944,6 @@ export default function App() {
                   <p>{t("pipelineHint")}</p>
                 </div>
                 <div className="view-tools">
-                  <select
-                    value=""
-                    onChange={(event) => applySavedFilter(event.target.value)}
-                    aria-label={t("savedFilters")}
-                  >
-                    <option value="">{t("savedFilters")}</option>
-                    {savedFilters.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
-                  </select>
-                  <button type="button" className="secondary-btn compact-action" onClick={saveCurrentFilter}>＋ {t("saveFilter")}</button>
                   <div className="view-toggle">
                     <button
                       type="button"
@@ -2984,6 +2958,13 @@ export default function App() {
                       onClick={() => setPipelineMode("calendar")}
                     >
                       ▣ Calendar
+                    </button>
+                    <button
+                      type="button"
+                      className={pipelineMode === "table" ? "active" : ""}
+                      onClick={() => setPipelineMode("table")}
+                    >
+                      ☰ Table
                     </button>
                   </div>
                   <div className="search-wrap">
@@ -3012,21 +2993,6 @@ export default function App() {
                     ))}
                   </select>
                   <select
-                    value={filters.status}
-                    onChange={(event) =>
-                      setFilters({ ...filters, status: event.target.value })
-                    }
-                  >
-                    <option value="all">
-                      {t("all")} {t("status")}
-                    </option>
-                    {activePipelineStatusValues.map((status) => (
-                      <option key={status} value={status}>
-                        {pipelineStatusLabel(status)}
-                      </option>
-                    ))}
-                  </select>
-                  <select
                     value={filters.priority}
                     onChange={(event) =>
                       setFilters({ ...filters, priority: event.target.value })
@@ -3049,6 +3015,35 @@ export default function App() {
                     <option value="priority">{lang === "en" ? "Priority: high first" : "Ưu tiên cao trước"}</option>
                     <option value="title">{lang === "en" ? "Title: A–Z" : "Tên: A–Z"}</option>
                   </select>
+                  <details className="more-filters">
+                    <summary>{lang === "en" ? "More" : "Thêm"}</summary>
+                    <div className="more-filters-menu">
+                      <select
+                    value={filters.status}
+                    onChange={(event) =>
+                      setFilters({ ...filters, status: event.target.value })
+                    }
+                  >
+                    <option value="all">
+                      {t("all")} {t("status")}
+                    </option>
+                    {activePipelineStatusValues.map((status) => (
+                      <option key={status} value={status}>
+                        {pipelineStatusLabel(status)}
+                      </option>
+                    ))}
+                  </select>
+                      <select
+                    value=""
+                    onChange={(event) => applySavedFilter(event.target.value)}
+                    aria-label={t("savedFilters")}
+                  >
+                    <option value="">{t("savedFilters")}</option>
+                    {savedFilters.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
+                  </select>
+                  <button type="button" className="secondary-btn compact-action" onClick={saveCurrentFilter}>＋ {t("saveFilter")}</button>
+                    </div>
+                  </details>
                 </div>
               </div>
               <form className="quick-capture" onSubmit={quickCapture}>
@@ -3066,9 +3061,7 @@ export default function App() {
                   {t("quickCaptureAdd")} {activePipelineStatusValues[0] ? pipelineStatusLabel(activePipelineStatusValues[0]) : ""}
                 </button>
               </form>
-              <div className="pipeline-subtools">
-                <span className="drag-hint">↕ {t("dragHint")}</span>
-                <span className="column-order-hint">↔ {t("reorderColumnsHint")}</span>
+              {pipelineMode === "board" && <div className="pipeline-subtools" title={`${t("dragHint")} · ${t("reorderColumnsHint")}`}>
                 <button type="button" className="link-btn select-visible" onClick={() => setSelectedIdeaIds(new Set(filteredIdeas.map((idea) => String(idea.id))))}>{lang === "en" ? "Select visible" : "Chọn các card đang hiện"}</button>
                 {!addingColumn ? (
                   <button type="button" className="secondary-btn compact-action" onClick={() => { setAddingColumn(true); setColumnTitleError(""); }}>{t("addColumn")}</button>
@@ -3097,9 +3090,9 @@ export default function App() {
                     <button type="button" className="link-btn" onClick={clearIdeaSelection}>{t("cancel")}</button>
                   </div>
                 )}
-              </div>
+              </div>}
               {columnTitleError && !editingColumnStatus && <p className="column-title-error" role="alert">{columnTitleError}</p>}
-              <div
+              {pipelineMode === "board" && <div
                 className="kanban"
                 style={{ "--pipeline-column-count": activePipelineStatusValues.length }}
               >
@@ -3115,17 +3108,9 @@ export default function App() {
                     }}
                   >
                     {(() => {
-                      const columnFilter =
-                        columnFilters[status] || EMPTY_COLUMN_FILTER;
                       const columnIdeas = sortIdeas(
-                        filterIdeasByFields(
-                          filteredIdeas.filter((idea) => idea.status === status),
-                          columnFilter,
-                        ),
+                        filteredIdeas.filter((idea) => idea.status === status),
                         kanbanSort,
-                      );
-                      const hasColumnFilter = Object.values(columnFilter).some(
-                        (value) => value !== "all" && value !== "",
                       );
                       return (
                         <>
@@ -3201,95 +3186,6 @@ export default function App() {
                     {editingColumnStatus === status && columnTitleError && (
                       <p className="column-title-error" role="alert">{columnTitleError}</p>
                     )}
-                    <div className="column-tools">
-                      <div className="column-search">
-                        <span aria-hidden="true">⌕</span>
-                        <input
-                          value={columnFilter.query}
-                          onChange={(event) =>
-                            updateColumnFilter(
-                              status,
-                              "query",
-                              event.target.value,
-                            )
-                          }
-                          placeholder={
-                            lang === "en" ? "Search this column" : "Tìm trong cột"
-                          }
-                          aria-label={`${lang === "en" ? "Search" : "Tìm kiếm"} ${pipelineStatusLabel(status)}`}
-                        />
-                      </div>
-                      <div className="column-filter-row">
-                        <select
-                          value={columnFilter.concept}
-                          onChange={(event) =>
-                            updateColumnFilter(
-                              status,
-                              "concept",
-                              event.target.value,
-                            )
-                          }
-                          aria-label={`${t("concept")} ${pipelineStatusLabel(status)}`}
-                        >
-                          <option value="all">
-                            {t("all")} {t("concept")}
-                          </option>
-                          {conceptOptions.map((concept) => (
-                            <option key={concept} value={concept}>
-                              {conceptLabel(concept, lang)}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          value={columnFilter.priority}
-                          onChange={(event) =>
-                            updateColumnFilter(
-                              status,
-                              "priority",
-                              event.target.value,
-                            )
-                          }
-                          aria-label={`${t("priority")} ${pipelineStatusLabel(status)}`}
-                        >
-                          <option value="all">
-                            {t("all")} {t("priority")}
-                          </option>
-                          <option value="1">P1</option>
-                          <option value="2">P2</option>
-                          <option value="3">P3</option>
-                        </select>
-                        <select
-                          className="column-platform-filter"
-                          value={columnFilter.platform}
-                          onChange={(event) =>
-                            updateColumnFilter(
-                              status,
-                              "platform",
-                              event.target.value,
-                            )
-                          }
-                          aria-label={`${t("platforms")} ${pipelineStatusLabel(status)}`}
-                        >
-                          <option value="all">
-                            {t("all")} {t("platforms")}
-                          </option>
-                          {platformOptions.map((platform) => (
-                            <option key={platform} value={platform}>
-                              {platform}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      {hasColumnFilter && (
-                        <button
-                          type="button"
-                          className="column-clear"
-                          onClick={() => clearColumnFilter(status)}
-                        >
-                          {lang === "en" ? "Clear filters" : "Xoá bộ lọc"}
-                        </button>
-                      )}
-                    </div>
                     <div className="idea-stack">
                       {columnIdeas.length ? columnIdeas.map((idea) => (
                           <article
@@ -3324,17 +3220,10 @@ export default function App() {
                               <span className="concept-tag">
                                 {conceptLabel(idea.concept, lang)}
                               </span>
-                              {idea.platforms.slice(0, 2).map((platform) => (
+                              {idea.platforms.slice(0, 3).map((platform) => (
                                 <PlatformBadge key={platform} platform={platform} compact iconOnly />
                               ))}
                             </div>
-                            {status !== STATUSES[0] && (
-                              <div className="idea-card-actions" onClick={(event) => event.stopPropagation()}>
-                                <select value={idea.status} onChange={(event) => quickUpdateStatus(idea, event.target.value)} aria-label={`${t("moveTo")} ${idea.title}`}>
-                                  {activePipelineStatusValues.map((option) => <option key={option} value={option}>{pipelineStatusLabel(option)}</option>)}
-                                </select>
-                              </div>
-                            )}
                           </article>
                         )) : (
                           <p className="column-empty">
@@ -3347,24 +3236,26 @@ export default function App() {
                     })()}
                   </section>
                 ))}
-              </div>
+              </div>}
               {pipelineMode === "calendar" && (
                 <PipelineCalendar
                   ideas={filteredIdeas}
                   lang={lang}
                   onOpen={setDetailIdea}
                 />
-              )}{" "}
+              )}
+              {pipelineMode === "table" && (
+                <EditableTable
+                  ideas={filteredIdeas}
+                  conceptOptions={conceptOptions}
+                  pipelineTitles={pipelineColumnTitles}
+                  pipelineStatuses={activePipelineStatusValues}
+                  lang={lang}
+                  t={t}
+                  onSave={updateIdea}
+                />
+              )}
             </section>
-            <EditableTable
-              ideas={filteredIdeas}
-              conceptOptions={conceptOptions}
-              pipelineTitles={pipelineColumnTitles}
-              pipelineStatuses={activePipelineStatusValues}
-              lang={lang}
-              t={t}
-              onSave={updateIdea}
-            />
           </section>
         )}
         {view === "audio" && (
@@ -3623,6 +3514,14 @@ export default function App() {
                 required
               />
             </label>
+            <label>
+              {t("hook")}
+              <textarea name="hook" rows="2" value={form.hook} onChange={setField} placeholder={lang === "en" ? "The first line viewers hear" : "Câu mở đầu người xem nghe thấy"} />
+            </label>
+            <label>
+              {lang === "en" ? "Main content" : "Nội dung chính"}
+              <textarea name="main_content" rows="4" value={form.main_content} onChange={setField} placeholder={lang === "en" ? "Beats, notes, links you want to remember" : "Các ý chính, ghi chú, link cần nhớ"} />
+            </label>
             <div className="form-row">
               <label>
                 {t("concept")}
@@ -3669,22 +3568,9 @@ export default function App() {
               onChange={(value) => setForm((current) => ({
                 ...current,
                 platforms: value,
-                platform_publish_dates: Object.fromEntries(Object.entries(current.platform_publish_dates || {}).filter(([platform]) => value.includes(platform))),
-                platform_publish_links: Object.fromEntries(Object.entries(current.platform_publish_links || {}).filter(([platform]) => value.includes(platform))),
-              }))}
-              publishDates={form.platform_publish_dates}
-              dateLabel={t("date")}
-              onDateChange={(platform, value) => setForm((current) => ({
-                ...current,
-                platform_publish_dates: { ...current.platform_publish_dates, [platform]: value },
-              }))}
-              publishLinks={form.platform_publish_links}
-              linkLabel={lang === "en" ? "Uploaded link" : "Link đã đăng"}
-              onLinkChange={(platform, value) => setForm((current) => ({
-                ...current,
-                platform_publish_links: { ...current.platform_publish_links, [platform]: value },
               }))}
             />
+            <p className="field-hint">{lang === "en" ? "Set publish dates and links later from the idea card." : "Ngày đăng và link thêm sau trong card ý tưởng."}</p>
             <div className="dialog-actions">
               <button
                 type="button"
