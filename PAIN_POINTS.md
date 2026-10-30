@@ -1,96 +1,96 @@
 # Content Creator Studio — Pain Points
 
-Tài liệu này ghi lại các vấn đề lớn khi content creator phát triển kênh, quản lý ý tưởng và đưa nội dung từ ý tưởng đến publish. Đây là backlog sản phẩm, không phải danh sách tính năng đã hoàn thành.
+The main problems creators run into when growing a channel, managing ideas and taking content from idea to publish. This is the product backlog, not a list of finished features.
 
-## Pain point chính
+## Main pain points
 
-### 1. Ý tưởng bị phân tán và khó tìm lại
+### 1. Ideas are scattered and hard to find again
 
-Creator thường lưu ý tưởng trong Google Sheets, ghi chú, tin nhắn hoặc bookmark. Khi cần sản xuất một chủ đề, họ mất thời gian tìm lại hook, reference, audio và bối cảnh liên quan.
+Creators keep ideas in Google Sheets, notes, messages and bookmarks. When it is time to produce a topic, they lose time digging up the hook, references, audio and context.
 
-**Cơ hội sản phẩm:** một kho ý tưởng có tìm kiếm, filter, tag/concept, priority, platform và link reference.
+**Product opportunity:** one idea library with search, filters, tags/concepts, priority, platforms and reference links.
 
-### 2. Từ idea đến publish bị đứt đoạn
+### 2. The path from idea to publish breaks
 
-Một ý tưởng có thể tồn tại trong sheet nhưng không có owner, trạng thái, deadline, checklist hoặc link media. Team khó biết nội dung đang ở bước nào và vì sao bị tồn đọng.
+An idea can sit in a sheet with no owner, status, deadline, checklist or media link. The team can't tell which step a piece of content is at or why it is stuck.
 
-**Cơ hội sản phẩm:** pipeline rõ ràng, owner, trạng thái, lịch đăng, checklist và liên kết giữa idea, variant, media.
+**Product opportunity:** a clear pipeline with owner, status, publish schedule, checklist, and links between idea, variant and media.
 
-### 3. Một nội dung phải biến đổi cho nhiều nền tảng
+### 3. One piece of content has to change for every platform
 
-TikTok, Instagram Reels, YouTube Shorts, Facebook Reels, LinkedIn và X có yêu cầu khác nhau về hook, caption, thời lượng, safe zone và CTA. Creator dễ copy cùng một phiên bản cho mọi kênh rồi phải sửa thủ công.
+TikTok, Instagram Reels, YouTube Shorts, Facebook Reels, LinkedIn and X each want a different hook, caption, length, safe zone and CTA. Creators tend to copy one version everywhere and then fix it by hand.
 
-**Cơ hội sản phẩm:** platform preset và content variant riêng cho từng nền tảng, có AI đề xuất adaptation.
+**Product opportunity:** platform presets and a content variant per platform, with AI suggesting the adaptation.
 
-### 4. Khó duy trì lịch đăng ổn định
+### 4. A steady posting schedule is hard to keep
 
-Creator không nhìn được lịch tổng thể, dễ trùng ngày, bỏ sót deadline hoặc đăng quá dồn vào một nền tảng.
+Creators can't see the whole schedule, so they double-book days, miss deadlines or post too much on one platform.
 
-**Cơ hội sản phẩm:** calendar theo tuần/tháng, trạng thái lịch, người phụ trách, link published và cảnh báo nội dung chưa sẵn sàng.
+**Product opportunity:** a weekly/monthly calendar with schedule status, owner, published link and a warning when content isn't ready.
 
-### 5. Quản lý tài nguyên media rời rạc
+### 5. Media files live everywhere
 
-Video, thumbnail, project file, audio và link đã publish thường nằm ở nhiều nơi. Việc tìm đúng bản cuối hoặc kiểm tra link trước khi đăng tốn thời gian.
+Videos, thumbnails, project files, audio and published links sit in many places. Finding the final cut or checking a link before posting takes time.
 
-**Cơ hội sản phẩm:** media asset dạng link, phân loại theo kind, gắn với idea/variant và kiểm tra URL hợp lệ. Giai đoạn đầu không cần lưu file trực tiếp.
+**Product opportunity:** media assets stored as links, grouped by kind, attached to an idea or variant, with URL validation. No file storage in the first phase.
 
-### 6. Thiếu quy trình kiểm tra trước khi publish
+### 6. No pre-publish check
 
-Các bước như kiểm tra caption, thumbnail, subtitle, hashtag, quyền sử dụng audio, link bio và tracking thường phụ thuộc vào trí nhớ cá nhân.
+Checking the caption, thumbnail, subtitles, hashtags, audio rights, bio link and tracking depends on someone's memory.
 
-**Cơ hội sản phẩm:** checklist theo variant/platform, người hoàn thành và thời điểm hoàn thành.
+**Product opportunity:** a checklist per variant/platform that records who completed each item and when.
 
-### 7. Brainstorm AI chưa gắn với dữ liệu thực tế
+### 7. AI brainstorm isn't grounded in real data
 
-AI có thể tạo ý tưởng chung chung nếu không biết audience, format đã thử, platform mục tiêu, content backlog và reference của team.
+AI produces generic ideas when it doesn't know the audience, the formats already tried, the target platforms, the backlog or the team's references.
 
-**Cơ hội sản phẩm:** brainstorm theo workspace, lưu lịch sử kết quả, cho phép biến kết quả thành idea và tạo adaptation theo từng platform.
+**Product opportunity:** brainstorm per workspace, saved results, one click to turn a result into an idea, and an adaptation per platform.
 
-### 8. Team nhiều người dễ ghi đè hoặc thiếu quyền hạn
+### 8. Teams overwrite each other or lack clear permissions
 
-Khi nhiều người cùng làm, khó biết ai được sửa, ai phụ trách và ai có quyền mời thành viên hoặc thay đổi preset.
+With several people working together it is unclear who can edit, who owns what, and who may invite members or change presets.
 
-**Cơ hội sản phẩm:** workspace, role owner/admin/editor/viewer, audit log và quyền theo thao tác.
+**Product opportunity:** workspaces, owner/admin/editor/viewer roles, an audit log and per-action permissions.
 
-### 9. Dữ liệu cũ khó chuyển an toàn khỏi Google Sheets
+### 9. Moving old data out of Google Sheets is risky
 
-Import trực tiếp có thể tạo bản ghi trùng, sai ngày, sai liên kết audio hoặc làm lộ dữ liệu giữa các workspace.
+A direct import can create duplicates, wrong dates, broken audio links, or leak data between workspaces.
 
-**Cơ hội sản phẩm:** import JSON có preview/validation, migration có timestamp, backfill có preview count và transaction atomic.
+**Product opportunity:** JSON import with preview and validation, timestamped migrations, and backfills with a preview count inside one atomic transaction.
 
-### 10. Không đo được nội dung nào thực sự hiệu quả
+### 10. No way to tell which content actually works
 
-Creator biết video đã đăng nhưng không có hệ thống liên kết format, hook, platform với kết quả như views, watch time, saves, shares hoặc conversion.
+Creators know a video went out but have no system linking format, hook and platform to results such as views, watch time, saves, shares or conversions.
 
-**Cơ hội sản phẩm:** performance snapshot thủ công trước, sau đó mới tích hợp API nền tảng nếu cần.
+**Product opportunity:** manual performance snapshots first, platform API integrations later if needed.
 
-## Ưu tiên đề xuất
+## Suggested priorities
 
-### P0 — cần giải quyết để workflow dùng được
+### P0 — needed for the workflow to be usable
 
-- Tìm kiếm và filter idea theo trạng thái, platform, priority và ngày.
-- Liên kết idea → content variant → schedule → media link.
-- Calendar CRUD và publishing checklist.
-- Workspace scoping, role cơ bản và import/backfill an toàn.
+- Search and filter ideas by status, platform, priority and date.
+- Link idea → content variant → schedule → media link.
+- Calendar CRUD and a publishing checklist.
+- Workspace scoping, basic roles, and safe import/backfill.
 
-### P1 — giúp team làm nhanh và nhất quán hơn
+### P1 — helps the team work faster and more consistently
 
 - Platform preset editor.
-- AI brainstorm theo workspace và lưu kết quả thành idea.
-- Invite/manage members và activity history.
-- Template checklist theo platform hoặc format.
+- AI brainstorm per workspace, with results saved as ideas.
+- Invite/manage members and activity history.
+- Checklist templates per platform or format.
 
-### P2 — giúp phát triển kênh dựa trên dữ liệu
+### P2 — helps grow the channel with data
 
-- Performance tracking theo platform.
-- Phân tích hook/format có hiệu quả.
-- Gợi ý lịch đăng dựa trên lịch sử.
-- Tích hợp API publish hoặc analytics của từng nền tảng.
+- Performance tracking per platform.
+- Analysis of which hooks and formats perform.
+- Posting-time suggestions based on history.
+- Integration with each platform's publishing or analytics API.
 
-## Nguyên tắc sản phẩm
+## Product principles
 
-- Workspace là ranh giới dữ liệu và quyền truy cập.
-- AI hỗ trợ quyết định; creator vẫn duyệt nội dung trước khi dùng.
-- Media giai đoạn đầu lưu bằng link ngoài, không upload file vào app.
-- Mọi thao tác migration dữ liệu cũ phải có preview và quyền owner.
-- Không lưu secret key ở frontend hoặc trong file import.
+- The workspace is the boundary for data and access.
+- AI supports decisions; the creator still reviews content before using it.
+- In the first phase media is stored as external links, not uploaded into the app.
+- Every migration of old data needs a preview and owner permission.
+- Never store secret keys in the frontend or in import files.

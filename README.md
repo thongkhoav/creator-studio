@@ -1,5 +1,7 @@
 # Content Creator Studio
 
+![Creator Studio: pipeline board with an AI-written script](docs/cover.jpg)
+
 A web workspace for short-form video creators that replaces a content spreadsheet: a production
 pipeline for ideas, an audio library, a quick-reference library of production rules, and an AI
 brainstorm that drafts a version of each idea for every platform you post to.
@@ -9,20 +11,29 @@ Render web service.
 
 ## Features
 
-- **Pipeline**: Kanban board and an inline-edit table. Ideas move through five stages
-  (idea → script → filming → editing → published), with concept, priority, publish date, hook,
-  hashtags and the platforms each idea targets.
+- **Pipeline**: Board, Calendar and Table views of the same ideas. Ideas move through five
+  stages (idea → script → filming → editing → published) by drag and drop, with concept,
+  priority, publish date, hook and the platforms each idea targets. Columns can be renamed,
+  reordered and extended per workspace.
+- **Quick capture**: press `N` anywhere on the board, type a title and hit Enter; the card shows up
+  in the first column at once and saves in the background.
+- **Expand with AI**: on any idea card, AI writes a hook, numbered beats and one caption per
+  platform into the form for you to review before saving.
 - **Multi-platform**: each idea can target TikTok, Instagram Reels, YouTube Shorts, Facebook Reels,
   LinkedIn and X, with a publish date and link per platform.
 - **AI brainstorm**: describe a topic, pick format, length and platforms; the backend calls an
   OpenAI-compatible Responses API and returns structured ideas with per-platform adaptations.
-  Brainstorm history is saved. The browser never sees the API key.
+  Choose the column and concept, then save one or all three ideas to the board and open them
+  there. Brainstorm history is saved. The browser never sees the API key.
 - **Audio library and quick reference**: background tracks, editing shortcuts, export presets and
   filming SOPs in one place.
 - **JSON import**: upload or paste JSON, preview counts and sample rows, then import (1 MB / 500
   rows per request, validated server-side).
 - **Workspaces**: Supabase Auth, workspaces with `owner` / `admin` / `editor` / `viewer` roles and
   row-level security. A simpler single-password mode exists for local prototypes.
+- **Light and dark themes**, following the system setting until you pick one.
+- **Phone layout**: a bottom tab bar instead of the sidebar, swipeable Kanban columns and a column
+  picker on cards for touch screens.
 - **8 UI languages**: Vietnamese, English, Korean, Japanese, Indonesian, Thai, Malay, Filipino.
 
 ## Run locally
