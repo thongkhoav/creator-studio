@@ -168,6 +168,10 @@ const COPY = {
     expandWithAi: "✦ Phát triển bằng AI",
     quickCapture: "Ghi nhanh ý tưởng",
     themeDark: "Chuyển sang nền tối",
+    navShortPipeline: "Pipeline",
+    navShortAudio: "Nhạc",
+    navShortReference: "Tham khảo",
+    navShortBrainstorm: "AI",
     themeLight: "Chuyển sang nền sáng",
     quickCapturePlaceholder: "Vừa nghĩ ra gì? Gõ rồi Enter…",
     quickCaptureAdd: "Thêm vào",
@@ -282,6 +286,10 @@ const COPY = {
     expandWithAi: "✦ Expand with AI",
     quickCapture: "Quick capture",
     themeDark: "Switch to dark theme",
+    navShortPipeline: "Pipeline",
+    navShortAudio: "Audio",
+    navShortReference: "Reference",
+    navShortBrainstorm: "AI",
     themeLight: "Switch to light theme",
     quickCapturePlaceholder: "Got an idea? Type it and press Enter…",
     quickCaptureAdd: "Add to",
@@ -652,11 +660,18 @@ function BrainstormPage({ lang, t, brainstorm, history, aiLoading, brainstormSou
   const [targetConcept, setTargetConcept] = useState("AI brainstorm");
   const resultsRef = useRef(null);
   const wasLoading = useRef(aiLoading);
+  const scrollToResults = useRef(false);
   useEffect(() => {
-    // Bring new ideas into view when a generation finishes; the form fills the first screen.
-    if (wasLoading.current && !aiLoading) resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // A finished generation should land on its results; the form fills the first screen.
+    if (wasLoading.current && !aiLoading) scrollToResults.current = true;
     wasLoading.current = aiLoading;
   }, [aiLoading]);
+  useEffect(() => {
+    // Scroll only once the result cards exist, which is a render after the request ends.
+    if (!scrollToResults.current || !drafts.length || !resultsRef.current) return;
+    scrollToResults.current = false;
+    resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [drafts]);
   const status = columns.some((column) => column.status === targetStatus) ? targetStatus : columns[0]?.status || "Lên ý tưởng";
   useEffect(() => {
     setDrafts(brainstorm || []);
@@ -828,7 +843,7 @@ function BrainstormPage({ lang, t, brainstorm, history, aiLoading, brainstormSou
         <aside className="brainstorm-history">
           <div className="result-section-head"><h2>{t("brainstormHistory")}</h2><span>{history.length}</span></div>
           {history.length ? history.slice(0, 8).map((entry) => (
-            <button type="button" className="history-entry" key={entry.id} onClick={() => { onRestore(entry); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }}>
+            <button type="button" className="history-entry" key={entry.id} onClick={() => { scrollToResults.current = true; onRestore(entry); }}>
               <strong>{entry.brief}</strong>
               <span>{entry.source === "demo" ? t("demoMode") : formatDateTime(entry.created_at || entry.createdAt, lang)} · {t("restore")}</span>
             </button>
@@ -2762,10 +2777,10 @@ export default function App() {
     }
   };
   const nav = [
-    ["pipeline", "▦", t("pipeline")],
-    ["audio", "♫", t("audio")],
-    ["reference", "⌘", t("reference")],
-    ["brainstorm", "✦", t("brainstorm")],
+    ["pipeline", "▦", t("pipeline"), t("navShortPipeline")],
+    ["audio", "♫", t("audio"), t("navShortAudio")],
+    ["reference", "⌘", t("reference"), t("navShortReference")],
+    ["brainstorm", "✦", t("brainstorm"), t("navShortBrainstorm")],
     // Operations is still a raw admin tool; keep it out of the creator's navigation.
     ...(isAdmin ? [["operations", "◈", "Operations"], ["admin", "⚙", "Admin"]] : []),
   ];
@@ -2795,7 +2810,7 @@ export default function App() {
           </div>
         </div>
         <nav className="nav-list">
-          {nav.map(([key, icon, label]) => (
+          {nav.map(([key, icon, label, short]) => (
             <button
               key={key}
               className={`nav-item ${view === key ? "active" : ""}`}
@@ -2810,6 +2825,7 @@ export default function App() {
             >
               <span>{icon}</span>
               <span className="nav-label">{label}</span>
+              <span className="nav-short">{short || label}</span>
               {key === "pipeline" && <b>{ideas.length}</b>}
             </button>
           ))}
@@ -2881,6 +2897,16 @@ export default function App() {
               {accountOpen && (
                 <div className="account-popover">
                   <span className="account-name">My workspace</span>
+                  <label className="account-language">
+                    {t("language")}
+                    <select value={lang} onChange={(event) => setLang(event.target.value)}>
+                      {Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
+                        <option key={code} value={code}>
+                          {languageOption(code, name)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <button className="account-logout" onClick={logout}>
                     {t("logout")}
                   </button>
@@ -3223,6 +3249,11 @@ export default function App() {
                               {idea.platforms.slice(0, 3).map((platform) => (
                                 <PlatformBadge key={platform} platform={platform} compact iconOnly />
                               ))}
+                            </div>
+                            <div className="idea-card-actions touch-only" onClick={(event) => event.stopPropagation()}>
+                              <select value={idea.status} onChange={(event) => quickUpdateStatus(idea, event.target.value)} aria-label={`${t("moveTo")} ${idea.title}`}>
+                                {activePipelineStatusValues.map((option) => <option key={option} value={option}>{pipelineStatusLabel(option)}</option>)}
+                              </select>
                             </div>
                           </article>
                         )) : (
