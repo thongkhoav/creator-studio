@@ -62,14 +62,13 @@ running it. Without Supabase the backend falls back to an in-memory store loaded
 ## Database
 
 1. Create a Supabase project.
-2. Apply the schema: run `supabase/schema.sql` in the SQL editor, or `supabase db push` with the
-   migrations in `supabase/migrations/`.
-3. Optional: load the sample data with `supabase/seed.sql` (regenerate it from `sheet-data.json`
-   with `python3 supabase/seed.py`).
-4. Run `supabase/import.sql` once to enable the JSON import RPC.
+2. Apply the schema: paste `supabase/setup.sql` into the SQL Editor and run it once, or run
+   `supabase db push` with the migrations in `supabase/migrations/`. `setup.sql` is all migrations
+   in order; rebuild it with `supabase/build_setup.sh` after adding one.
+3. Sign up in the app, then optionally load the demo workspace (see Demo workspace).
 
-Rollback scripts live in `supabase/rollback/` and are applied manually. Never edit a migration that
-has already run; add a new one.
+Rollback scripts live in `supabase/rollback/` and are applied manually. Never change what a migration that
+has already run does; add a new one.
 
 ## Deploy
 
