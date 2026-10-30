@@ -2019,7 +2019,7 @@ export default function App() {
     statusLabel(status, lang, pipelineColumnTitles);
   const beginColumnTitleEdit = (status) => {
     setEditingColumnStatus(status);
-    setColumnTitleDraft(pipelineColumnTitles[status] || status);
+    setColumnTitleDraft(pipelineStatusLabel(status));
     setColumnTitleError("");
   };
   const cancelColumnTitleEdit = () => {
@@ -3063,7 +3063,7 @@ export default function App() {
                 />
                 <kbd>N</kbd>
                 <button type="submit" className="primary-btn" disabled={!quickTitle.trim()}>
-                  {t("quickCaptureAdd")} {pipelineColumnTitles[activePipelineStatusValues[0]] || ""}
+                  {t("quickCaptureAdd")} {activePipelineStatusValues[0] ? pipelineStatusLabel(activePipelineStatusValues[0]) : ""}
                 </button>
               </form>
               <div className="pipeline-subtools">
@@ -3563,7 +3563,7 @@ export default function App() {
             onSaveIdea={saveBrainstormIdea}
             onOpenIdea={openIdeaInPipeline}
             onNotify={notify}
-            columns={activePipelineStatusValues.map((status) => ({ status, title: pipelineColumnTitles[status] || status }))}
+            columns={activePipelineStatusValues.map((status) => ({ status, title: pipelineStatusLabel(status) }))}
             conceptOptions={conceptOptions}
             onCopy={copyBrainstormScript}
             onRestore={(entry) => { setBrainstorm(entry.ideas || []); setBrainstormSource(entry.source || "ai"); setBrainstormError(entry.source === "demo" ? (lang === "en" ? "This is a saved local demo." : "Đây là bản demo local đã lưu.") : ""); }}
