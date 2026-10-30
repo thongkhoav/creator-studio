@@ -154,6 +154,21 @@ class MainTests(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             prompt = request.call_args.kwargs['json']['input']
             self.assertIn('LinkedIn, X', prompt)
+            self.assertIn('Vietnamese', request.call_args.kwargs['json']['instructions'])
+
+    def test_brainstorm_answers_in_the_requested_language(self):
+        class FakeResponse:
+            def raise_for_status(self): pass
+            def json(self): return {'output_text': '{"ideas": []}'}
+
+        with patch.dict(os.environ, {'APP_PASSWORD': 'correct horse', 'APP_SESSION_SECRET': 'test-secret', 'LLM_API_KEY': 'test-key'}, clear=False):
+            client = TestClient(main.app)
+            client.post('/api/auth/login', json={'password': 'correct horse'})
+            with patch('backend.app.main.httpx.post', return_value=FakeResponse()) as request:
+                response = client.post('/api/brainstorm', json={'brief': 'Desk setup', 'platforms': ['TikTok'], 'language': 'en'})
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('Write every text field in English', request.call_args.kwargs['json']['instructions'])
+            self.assertEqual(client.post('/api/brainstorm', json={'brief': 'Desk setup', 'language': 'fr'}).status_code, 422)
 
     def test_brainstorm_history_api_requires_login_and_persists(self):
         with patch.dict(os.environ, {'APP_PASSWORD': 'history-password', 'APP_SESSION_SECRET': 'history-secret'}, clear=False):

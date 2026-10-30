@@ -123,8 +123,13 @@ class IdeaIn(BaseModel):
         if not 1 <= len(value) <= 80: raise ValueError("invalid concept")
         return value
 
+# UI language codes the brainstorm can answer in, mapped to names the model understands.
+BRAINSTORM_LANGUAGES = {"vi": "Vietnamese", "en": "English", "ko": "Korean", "ja": "Japanese",
+                        "id": "Indonesian", "th": "Thai", "ms": "Malay", "fil": "Filipino"}
+
 class BrainstormIn(BaseModel):
     brief: str = Field(min_length=2, max_length=4000)
+    language: Literal["vi", "en", "ko", "ja", "id", "th", "ms", "fil"] = "vi"
     format: str = Field(default="Vlog ngắn", max_length=80)
     duration: str = Field(default="30-40 giây", max_length=80)
     platforms: list[str] = Field(default_factory=lambda: ["TikTok", "Instagram Reels", "YouTube Shorts"], min_length=1)
@@ -807,8 +812,9 @@ def brainstorm(request: BrainstormIn, http_request: Request, _: None = Depends(r
     if not api_key: raise HTTPException(503, "AI is not configured. Set LLM_API_KEY on the server.")
     base_url = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1").rstrip("/")
     platform_list = ", ".join(request.platforms)
-    prompt = f"Chủ đề: {request.brief}\nFormat: {request.format}\nĐộ dài: {request.duration}\nNền tảng cần tối ưu: {platform_list}"
-    payload = {"model": os.environ.get("LLM_MODEL", "gpt-4.1-mini"), "instructions": "You are a Vietnamese multi-platform content strategist. Return JSON object {ideas:[{title,hook,outline,format,platforms,adaptations}]} with exactly 3 concrete shootable ideas. For each idea include platforms and concise adaptations for TikTok, Instagram Reels, YouTube Shorts, Facebook Reels, LinkedIn, or X when relevant. Do not claim a trend without evidence.", "input": prompt, "text": {"format": {"type": "json_object"}}}
+    language = BRAINSTORM_LANGUAGES[request.language]
+    prompt = f"Topic: {request.brief}\nFormat: {request.format}\nLength: {request.duration}\nPlatforms to optimize for: {platform_list}"
+    payload = {"model": os.environ.get("LLM_MODEL", "gpt-4.1-mini"), "instructions": f"You are a multi-platform short-form content strategist. Write every text field in {language}. " + "Return JSON object {ideas:[{title,hook,outline,format,platforms,adaptations}]} with exactly 3 concrete shootable ideas. For each idea include platforms and concise adaptations for TikTok, Instagram Reels, YouTube Shorts, Facebook Reels, LinkedIn, or X when relevant. Do not claim a trend without evidence.", "input": prompt, "text": {"format": {"type": "json_object"}}}
     try:
         response = httpx.post(f"{base_url}/responses", headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, json=payload, timeout=45); response.raise_for_status(); data = response.json()
         text = data.get("output_text", "") or "\n".join(content.get("text", "") for item in data.get("output", []) for content in item.get("content", []) if isinstance(content, dict))
