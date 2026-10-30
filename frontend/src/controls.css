@@ -85,3 +85,26 @@ select option { background: #202329; color: var(--ink); }
 @media (prefers-reduced-motion: reduce) {
   select:not([multiple]), select:not([multiple])::picker-icon, .platform-option { transition: none; }
 }
+
+/* Brainstorm → pipeline save bar */
+.brainstorm-save-bar { display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; margin:14px 0 4px; padding:12px; background:var(--panel); border:1px solid var(--line); border-radius:10px; }
+.brainstorm-save-bar label { margin:0; min-width:160px; }
+.brainstorm-save-bar select { height:36px; padding:0 10px; }
+.brainstorm-save-bar .primary-btn { margin-left:auto; height:36px; padding:0 14px; }
+.saved-idea-link { color:var(--lime); border-color:#4b5632; }
+
+/* Expand with AI inside the idea drawer */
+.expand-ai { display:flex; align-items:center; gap:10px; margin:2px 0 14px; padding:10px 12px; border:1px dashed #4b5632; border-radius:9px; background:#1c211a; }
+.expand-ai .secondary-btn { padding:8px 11px; font-size:11px; display:inline-flex; align-items:center; gap:6px; }
+.expand-ai span { color:#b8c0a9; font-size:11px; line-height:1.4; }
+textarea.ai-filled { border-color:#6b7d3d; box-shadow:0 0 0 3px rgb(215 243 107 / .08); }
+
+/* Quick capture above the board */
+.quick-capture { display:flex; align-items:center; gap:10px; margin:14px 16px 0; padding:6px 6px 6px 14px; background:#15171b; border:1px solid var(--line); border-radius:10px; transition:border-color .15s; }
+.quick-capture:focus-within { border-color:var(--lime); }
+.quick-capture > span { color:var(--lime); font-size:16px; }
+.quick-capture input { flex:1; min-width:0; border:0; background:transparent; padding:9px 0; font-size:13px; }
+.quick-capture input:focus { border:0; }
+.quick-capture kbd { font:11px ui-monospace,monospace; color:var(--muted); border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding:2px 6px; }
+.quick-capture .primary-btn { padding:9px 13px; font-size:12px; display:inline-flex; align-items:center; gap:6px; }
+@media (max-width:720px) { .quick-capture { margin:10px 10px 0; } .quick-capture kbd { display:none; } }

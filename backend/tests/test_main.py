@@ -1,3 +1,4 @@
+import json
 import os
 import unittest
 from unittest.mock import patch
@@ -169,6 +170,23 @@ class MainTests(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertIn('Write every text field in English', request.call_args.kwargs['json']['instructions'])
             self.assertEqual(client.post('/api/brainstorm', json={'brief': 'Desk setup', 'language': 'fr'}).status_code, 422)
+
+    def test_expand_idea_returns_a_reviewable_draft_in_the_ui_language(self):
+        class FakeResponse:
+            def raise_for_status(self): pass
+            def json(self): return {'output_text': json.dumps({'hook': ' Stop scrolling. ', 'outline': ['1. Problem', '2. Fix'], 'adaptations': {'TikTok': 'Fast cuts', 'X': 'not requested'}})}
+
+        with patch.dict(os.environ, {'APP_PASSWORD': 'correct horse', 'APP_SESSION_SECRET': 'test-secret', 'LLM_API_KEY': 'test-key'}, clear=False):
+            client = TestClient(main.app)
+            client.post('/api/auth/login', json={'password': 'correct horse'})
+            with patch('backend.app.main.httpx.post', return_value=FakeResponse()) as request:
+                response = client.post('/api/brainstorm/expand', json={'title': 'Desk stretches', 'hook': 'Your back will thank you', 'platforms': ['TikTok'], 'language': 'en'})
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual(response.json()['idea'], {'hook': 'Stop scrolling.', 'outline': '1. Problem\n2. Fix', 'adaptations': {'TikTok': 'Fast cuts'}})
+            self.assertIn('Desk stretches', request.call_args.kwargs['json']['input'])
+            self.assertIn('JSON', request.call_args.kwargs['json']['input'])
+            self.assertIn('Write every text field in English', request.call_args.kwargs['json']['instructions'])
+            self.assertEqual(client.post('/api/brainstorm/expand', json={'title': 'x', 'platforms': ['Snapchat']}).status_code, 422)
 
     def test_brainstorm_history_api_requires_login_and_persists(self):
         with patch.dict(os.environ, {'APP_PASSWORD': 'history-password', 'APP_SESSION_SECRET': 'history-secret'}, clear=False):

@@ -154,15 +154,20 @@ export function getPlanningMetrics(ideas, now = new Date()) {
     return metrics;
   }, { dueToday: 0, overdue: 0, upcomingWeek: 0, unscheduled: 0 });
 }
-export function createBrainstormIdeaPayload(item = {}) {
+export function createBrainstormIdeaPayload(item = {}, { status = 'Lên ý tưởng', concept = 'AI brainstorm', captionsLabel = 'Platform captions' } = {}) {
+  // Keep the per-platform captions with the outline so they reach the idea card.
+  const captions = item.adaptations && typeof item.adaptations === 'object'
+    ? Object.entries(item.adaptations).map(([platform, copy]) => `${platform}: ${String(copy).trim()}`).filter((line) => !line.endsWith(': '))
+    : [];
+  const outline = String(item.outline ?? '').trim();
   return {
     title: String(item.title ?? '').trim(),
-    status: 'Lên ý tưởng',
-    concept: 'AI brainstorm',
+    status: String(status || 'Lên ý tưởng'),
+    concept: normalizeConcept(concept) || 'AI brainstorm',
     priority: 2,
     publish_date: null,
     hook: String(item.hook ?? '').trim(),
-    main_content: String(item.outline ?? '').trim(),
+    main_content: captions.length ? [outline, '', `${captionsLabel}:`, ...captions].join('\n').trim() : outline,
     hashtag: [],
     platforms: Array.isArray(item.platforms) && item.platforms.length ? item.platforms : ['TikTok'],
   };

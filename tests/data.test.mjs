@@ -269,3 +269,16 @@ test('buildBrainstormCopy includes the editable script and platform adaptations'
   assert.match(copied, /TikTok: Nhanh và dồn dập/);
   assert.match(copied, /LinkedIn: Thêm số liệu/);
 });
+
+test('createBrainstormIdeaPayload keeps platform captions and the chosen column and concept', () => {
+  const payload = createBrainstormIdeaPayload({
+    title: 'Ship a side project in a weekend',
+    hook: 'Friday night, empty repo.',
+    outline: 'Plan → build → launch',
+    platforms: ['TikTok', 'LinkedIn'],
+    adaptations: { TikTok: 'Fast cuts, timer on screen.', LinkedIn: 'Lessons in three bullets.' },
+  }, { status: 'Kịch bản', concept: 'Tutorial' });
+  assert.equal(payload.status, 'Kịch bản');
+  assert.equal(payload.concept, 'Tutorial');
+  assert.equal(payload.main_content, 'Plan → build → launch\n\nPlatform captions:\nTikTok: Fast cuts, timer on screen.\nLinkedIn: Lessons in three bullets.');
+});
