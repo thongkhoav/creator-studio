@@ -545,20 +545,30 @@ function statusLabel(value, lang, customTitles = {}) {
 function conceptLabel(value, lang) {
   return CONCEPT_LABELS[value]?.[lang] || value;
 }
-function demoBrainstorm(brief, format, duration, platforms) {
+// Offline fallback when the AI is unreachable: English for the English UI,
+// Vietnamese otherwise.
+function demoBrainstorm(brief, format, duration, platforms, lang = "vi") {
+  const en = lang === "en";
   return platforms
     .slice(0, 3)
     .map((platform, index) => ({
-      title: `${brief}: ${index + 1} góc kể chuyện`,
+      title: en ? `${brief}: angle ${index + 1}` : `${brief}: ${index + 1} góc kể chuyện`,
       hook: index
-        ? `Một phiên bản dành riêng cho ${platform}.`
-        : `Nếu bạn từng ${brief.toLowerCase()}, video này là cho bạn.`,
-      outline:
-        "Mở bằng tình huống thật → 3 nhịp nội dung → CTA phù hợp với kênh.",
+        ? en
+          ? `A version made for ${platform}.`
+          : `Một phiên bản dành riêng cho ${platform}.`
+        : en
+          ? `If you have ever dealt with ${brief.toLowerCase()}, this one is for you.`
+          : `Nếu bạn từng ${brief.toLowerCase()}, video này là cho bạn.`,
+      outline: en
+        ? "Open with a real situation → 3 content beats → a call to action that fits the channel."
+        : "Mở bằng tình huống thật → 3 nhịp nội dung → CTA phù hợp với kênh.",
       format: `${format} · ${duration}`,
       platforms: [platform],
       adaptations: {
-        [platform]: `Giữ nhịp ngắn, caption rõ và CTA theo hành vi của ${platform}.`,
+        [platform]: en
+          ? `Keep it short, clear captions, and a call to action that suits ${platform}.`
+          : `Giữ nhịp ngắn, caption rõ và CTA theo hành vi của ${platform}.`,
       },
     }));
 }
@@ -2521,7 +2531,7 @@ export default function App() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ brief, format, duration, platforms }),
+          body: JSON.stringify({ brief, format, duration, platforms, language: lang }),
         },
         workspaceId,
       );
@@ -2534,7 +2544,7 @@ export default function App() {
         lang === "en" ? "AI generated 3 ideas." : "AI đã tạo 3 hướng nội dung",
       );
     } catch {
-      const demoIdeas = demoBrainstorm(brief, format, duration, platforms);
+      const demoIdeas = demoBrainstorm(brief, format, duration, platforms, lang);
       setBrainstorm(demoIdeas);
       setBrainstormSource("demo");
       setBrainstormError(lang === "en" ? "AI could not be reached." : "Không thể kết nối tới AI.");
