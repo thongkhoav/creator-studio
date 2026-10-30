@@ -173,6 +173,17 @@ const COPY = {
     retry: "Thử lại",
     demoMode: "DEMO LOCAL · AI chưa kết nối",
     trackUsed: "Đã dùng",
+    addToColumn: "Thêm vào cột",
+    saveAllToPipeline: "Lưu cả 3 vào Pipeline",
+    openInPipeline: "Mở trong Pipeline ↗",
+    platformCaptions: "Caption theo nền tảng",
+    expandWithAi: "✦ Phát triển bằng AI",
+    quickCapture: "Ghi nhanh ý tưởng",
+    quickCapturePlaceholder: "Vừa nghĩ ra gì? Gõ rồi Enter…",
+    quickCaptureAdd: "Thêm vào",
+    quickCaptureConcept: "Ghi nhanh",
+    expandHint: "AI viết hook, dàn ý và caption từ ý tưởng này.",
+    expandReview: "AI đã điền bản nháp. Xem lại rồi bấm Lưu.",
     trackUnused: "Chưa dùng",
     syncLoading: "Đang đồng bộ",
     syncConnected: "Đã kết nối",
@@ -274,6 +285,17 @@ const COPY = {
     retry: "Retry",
     demoMode: "LOCAL DEMO · AI unavailable",
     trackUsed: "Used",
+    addToColumn: "Add to",
+    saveAllToPipeline: "Save all to Pipeline",
+    openInPipeline: "Open in Pipeline ↗",
+    platformCaptions: "Platform captions",
+    expandWithAi: "✦ Expand with AI",
+    quickCapture: "Quick capture",
+    quickCapturePlaceholder: "Got an idea? Type it and press Enter…",
+    quickCaptureAdd: "Add to",
+    quickCaptureConcept: "Inbox",
+    expandHint: "AI writes a hook, beats and captions from this idea.",
+    expandReview: "AI filled in a draft. Review it, then Save.",
     trackUnused: "Unused",
     syncLoading: "Syncing",
     syncConnected: "Connected",
@@ -625,7 +647,7 @@ function PlatformPicker({ value, onChange, label, publishDates = {}, onDateChang
   );
 }
 
-function BrainstormPage({ lang, t, brainstorm, history, aiLoading, brainstormSource, brainstormError, onRun, onRetry, onSaveIdea, onCopy, onRestore }) {
+function BrainstormPage({ lang, t, brainstorm, history, aiLoading, brainstormSource, brainstormError, onRun, onRetry, onSaveIdea, onOpenIdea, onNotify, onCopy, onRestore, columns = [], conceptOptions = [] }) {
   const [platforms, setPlatforms] = useState([
     "TikTok",
     "Instagram Reels",
@@ -633,20 +655,34 @@ function BrainstormPage({ lang, t, brainstorm, history, aiLoading, brainstormSou
   ]);
   const [drafts, setDrafts] = useState(brainstorm || []);
   const [savingIndex, setSavingIndex] = useState(null);
-  const [savedIndexes, setSavedIndexes] = useState(() => new Set());
+  const [savedIds, setSavedIds] = useState(() => new Map());
+  const [targetStatus, setTargetStatus] = useState("");
+  const [targetConcept, setTargetConcept] = useState("AI brainstorm");
+  const status = columns.some((column) => column.status === targetStatus) ? targetStatus : columns[0]?.status || "Lên ý tưởng";
   useEffect(() => {
     setDrafts(brainstorm || []);
-    setSavedIndexes(new Set());
+    setSavedIds(new Map());
   }, [brainstorm]);
   const updateDraft = (index, key, value) => {
     setDrafts((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value } : item));
   };
-  const saveDraft = async (item, index) => {
+  const saveDraft = async (item, index, options = {}) => {
     setSavingIndex(index);
-    const saved = await onSaveIdea(item);
-    if (saved) setSavedIndexes((current) => new Set([...current, index]));
+    const saved = await onSaveIdea(item, { status, concept: targetConcept, ...options });
+    if (saved) setSavedIds((current) => new Map(current).set(index, saved.id));
     setSavingIndex(null);
+    return saved;
   };
+  const saveAll = async () => {
+    // One at a time so a new concept is created once, not raced by three requests.
+    let count = 0;
+    for (const [index, item] of drafts.entries()) {
+      if (savedIds.has(index) || !item.title?.trim()) continue;
+      if (await saveDraft(item, index, { quiet: true })) count += 1;
+    }
+    if (count) onNotify(lang === "en" ? `Saved ${count} ideas to Pipeline.` : `Đã lưu ${count} ý tưởng vào Pipeline.`);
+  };
+  const unsaved = drafts.filter((item, index) => !savedIds.has(index) && item.title?.trim()).length;
   return (
     <section className="view brainstorm-page">
       <div className="page-heading">
@@ -725,6 +761,21 @@ function BrainstormPage({ lang, t, brainstorm, history, aiLoading, brainstormSou
         {drafts.length > 0 && (
           <div className="brainstorm-results">
           <div className="result-section-head"><h2>{t("result")}</h2><span>{drafts.length} ideas</span></div>
+          <div className="brainstorm-save-bar">
+            <label>{t("addToColumn")}
+              <select value={status} onChange={(event) => setTargetStatus(event.target.value)}>
+                {columns.map((column) => <option key={column.status} value={column.status}>{column.title}</option>)}
+              </select>
+            </label>
+            <label>{t("concept")}
+              <select value={targetConcept} onChange={(event) => setTargetConcept(event.target.value)}>
+                {[...new Set(["AI brainstorm", ...conceptOptions])].map((concept) => <option key={concept} value={concept}>{concept}</option>)}
+              </select>
+            </label>
+            <button type="button" className="primary-btn" disabled={!unsaved || savingIndex !== null} onClick={saveAll}>
+              {savingIndex !== null ? <><Spinner />{t("save")}</> : t("saveAllToPipeline")}
+            </button>
+          </div>
           {drafts.map((item, index) => (
             <article
               className="brainstorm-result"
@@ -759,9 +810,15 @@ function BrainstormPage({ lang, t, brainstorm, history, aiLoading, brainstormSou
                 <button type="button" className="secondary-btn" onClick={() => onCopy(buildBrainstormCopy(item))}>
                   ⧉ {t("copyScript")}
                 </button>
-                <button type="button" className="primary-btn" disabled={savingIndex === index || savedIndexes.has(index) || !item.title?.trim()} onClick={() => saveDraft(item, index)}>
-                  {savingIndex === index ? <><Spinner />{t("save")}</> : savedIndexes.has(index) ? t("savedToPipeline") : t("saveToPipeline")}
-                </button>
+                {savedIds.has(index) ? (
+                  <button type="button" className="secondary-btn saved-idea-link" onClick={() => onOpenIdea(savedIds.get(index))}>
+                    ✓ {t("openInPipeline")}
+                  </button>
+                ) : (
+                  <button type="button" className="primary-btn" disabled={savingIndex !== null || !item.title?.trim()} onClick={() => saveDraft(item, index)}>
+                    {savingIndex === index ? <><Spinner />{t("save")}</> : t("saveToPipeline")}
+                  </button>
+                )}
               </div>
             </article>
           ))}
@@ -1175,7 +1232,7 @@ function ConceptPicker({
   );
 }
 
-function IdeaDrawer({ idea, conceptOptions, pipelineTitles, pipelineStatuses, lang, t, onClose, onSave, onDelete }) {
+function IdeaDrawer({ idea, conceptOptions, pipelineTitles, pipelineStatuses, lang, t, onClose, onSave, onDelete, onExpand }) {
   const [draft, setDraft] = useState({
     ...idea,
     publish_date: idea.publishDate || "",
@@ -1185,9 +1242,20 @@ function IdeaDrawer({ idea, conceptOptions, pipelineTitles, pipelineStatuses, la
     platform_publish_links: idea.platformPublishLinks || {},
   });
   const [saving, setSaving] = useState(false);
+  const [expanding, setExpanding] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const update = (key, value) =>
     setDraft((current) => updateIdeaDraft(current, key, value));
   const label = (vi, en) => (lang === "en" ? en : vi);
+  const expand = async () => {
+    setExpanding(true);
+    const result = await onExpand(draft);
+    setExpanding(false);
+    if (!result) return;
+    // Fill the form only; nothing is saved until the creator presses Save.
+    setDraft((current) => ({ ...current, hook: result.hook, main_content: result.mainContent }));
+    setExpanded(true);
+  };
   return (
     <aside
       className="idea-drawer"
@@ -1223,10 +1291,17 @@ function IdeaDrawer({ idea, conceptOptions, pipelineTitles, pipelineStatuses, la
             required
           />
         </label>
+        <div className="expand-ai">
+          <button type="button" className="secondary-btn" onClick={expand} disabled={expanding || !draft.title?.trim()}>
+            {expanding ? <><Spinner />{t("generating")}</> : t("expandWithAi")}
+          </button>
+          <span>{expanded ? t("expandReview") : t("expandHint")}</span>
+        </div>
         <label>
           {t("hook")}
           <textarea
             rows="3"
+            className={expanded ? "ai-filled" : ""}
             value={draft.hook || ""}
             onChange={(event) => update("hook", event.target.value)}
           />
@@ -1234,7 +1309,8 @@ function IdeaDrawer({ idea, conceptOptions, pipelineTitles, pipelineStatuses, la
         <label>
           {label("Nội dung chính", "Main content")}
           <textarea
-            rows="5"
+            rows={expanded ? 9 : 5}
+            className={expanded ? "ai-filled" : ""}
             value={draft.main_content || ""}
             onChange={(event) => update("main_content", event.target.value)}
           />
@@ -1865,6 +1941,9 @@ export default function App() {
   const [pipelineMode, setPipelineMode] = useState("board");
   const [kanbanSort, setKanbanSort] = useState("newest");
   const [detailIdea, setDetailIdea] = useState(null);
+  const [pendingOpenIdeaId, setPendingOpenIdeaId] = useState(null);
+  const [quickTitle, setQuickTitle] = useState("");
+  const quickCaptureRef = useRef(null);
   const [returnToIdeaForm, setReturnToIdeaForm] = useState(false);
   const [lang, setLang] = useState(
     () => localStorage.getItem("content-lang") || "vi",
@@ -2235,6 +2314,25 @@ export default function App() {
     () => (data.ideas || []).map(normalizeIdea),
     [data.ideas],
   );
+  useEffect(() => {
+    if (!pendingOpenIdeaId) return;
+    const idea = ideas.find((item) => String(item.id) === String(pendingOpenIdeaId));
+    if (idea) {
+      setDetailIdea(idea);
+      setPendingOpenIdeaId(null);
+    }
+  }, [pendingOpenIdeaId, ideas]);
+  useEffect(() => {
+    // "N" jumps to quick capture from anywhere on the pipeline, unless the user is typing.
+    const onKey = (event) => {
+      if (view !== "pipeline" || event.key.toLowerCase() !== "n" || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.target.closest?.("input, textarea, select, [contenteditable=true], dialog, .idea-drawer")) return;
+      event.preventDefault();
+      quickCaptureRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [view]);
   const filteredIdeas = useMemo(
     () => {
       const now = new Date();
@@ -2274,7 +2372,8 @@ export default function App() {
     () =>
       mergeConceptNames(
         workspaceConcepts,
-        CONCEPTS,
+        // Starter concepts only help an empty workspace; otherwise they mix into the team's own list.
+        workspaceConcepts.length ? [] : CONCEPTS,
         ideas.map((idea) => idea.concept),
       ),
     [workspaceConcepts, ideas],
@@ -2325,7 +2424,15 @@ export default function App() {
   const clearIdeaSelection = () => setSelectedIdeaIds(new Set());
   const quickUpdateStatus = async (idea, status) => {
     if (!status || status === idea.status) return true;
-    return updateIdea(idea.id, { ...idea, status, publish_date: idea.publishDate, main_content: idea.mainContent });
+    // Move the card right away; the server call confirms it, and a failure moves it back.
+    const setStatus = (value) => setData((current) => ({
+      ...current,
+      ideas: (current.ideas || []).map((item) => String(item.id) === String(idea.id) ? { ...item, status: value } : item),
+    }));
+    setStatus(status);
+    const saved = await updateIdea(idea.id, { ...idea, status, publish_date: idea.publishDate, main_content: idea.mainContent }, { quiet: true });
+    if (!saved) setStatus(idea.status);
+    return saved;
   };
   const bulkUpdateStatus = async (status) => {
     const selected = ideas.filter((idea) => selectedIdeaIds.has(String(idea.id)));
@@ -2403,7 +2510,7 @@ export default function App() {
           .toLowerCase()
           .includes(audioFilter.query.toLowerCase())),
   );
-  const updateIdea = async (ideaId, draft) => {
+  const updateIdea = async (ideaId, draft, { quiet = false } = {}) => {
     try {
       await ensureWorkspaceConcept(draft.concept);
       const response = await apiFetch(
@@ -2433,9 +2540,10 @@ export default function App() {
           ...current,
           ideas: mergeIdea(current.ideas || [], payload.idea),
         }));
+      } else {
+        await refresh();
       }
-      await refresh();
-      notify(lang === "en" ? "Idea updated." : "Đã cập nhật ý tưởng");
+      if (!quiet) notify(lang === "en" ? "Idea updated." : "Đã cập nhật ý tưởng");
       return true;
     } catch {
       notify(
@@ -2577,9 +2685,9 @@ export default function App() {
       return false;
     }
   };
-  const saveBrainstormIdea = async (item) => {
+  const saveBrainstormIdea = async (item, { status, concept, quiet = false } = {}) => {
     try {
-      const draft = createBrainstormIdeaPayload(item);
+      const draft = createBrainstormIdeaPayload(item, { status, concept, captionsLabel: t("platformCaptions") });
       await ensureWorkspaceConcept(draft.concept);
       const response = await apiFetch(
         "/api/ideas",
@@ -2591,13 +2699,67 @@ export default function App() {
         workspaceId,
       );
       if (!response.ok) throw new Error();
-      await refresh();
-      notify(lang === "en" ? "Saved to Pipeline." : "Đã lưu vào Pipeline.");
-      return true;
+      const payload = await response.json();
+      setData((current) => ({ ...current, ideas: [...(current.ideas || []), payload.idea] }));
+      if (!quiet) notify(lang === "en" ? "Saved to Pipeline." : "Đã lưu vào Pipeline.");
+      return payload.idea;
     } catch {
       notify(lang === "en" ? "Could not save this idea." : "Không thể lưu ý tưởng này.");
-      return false;
+      return null;
     }
+  };
+  const quickCapture = async (event) => {
+    event.preventDefault();
+    const title = quickTitle.trim();
+    if (!title) return;
+    const concept = t("quickCaptureConcept");
+    const idea = { title, status: activePipelineStatusValues[0] || "Lên ý tưởng", concept, priority: 2, platforms: ["TikTok"] };
+    // Show the card at once and let the server catch up, so capturing never waits on the network.
+    const tempId = `pending-${Date.now()}`;
+    setData((current) => ({ ...current, ideas: [...(current.ideas || []), { ...idea, id: tempId, created_at: new Date().toISOString() }] }));
+    setQuickTitle("");
+    quickCaptureRef.current?.focus();
+    try {
+      await ensureWorkspaceConcept(concept);
+      const response = await apiFetch(
+        "/api/ideas",
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(idea) },
+        workspaceId,
+      );
+      if (!response.ok) throw new Error();
+      const payload = await response.json();
+      setData((current) => ({ ...current, ideas: (current.ideas || []).map((item) => item.id === tempId ? payload.idea : item) }));
+      notify(lang === "en" ? "Captured. Open the card to add details." : "Đã ghi lại. Mở card để thêm chi tiết.");
+    } catch {
+      setData((current) => ({ ...current, ideas: (current.ideas || []).filter((item) => item.id !== tempId) }));
+      setQuickTitle((current) => current || title);
+      notify(lang === "en" ? "Could not save this idea." : "Không thể lưu ý tưởng này.");
+    }
+  };
+  const expandIdea = async (draft) => {
+    try {
+      const response = await apiFetch(
+        "/api/brainstorm/expand",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: draft.title, hook: draft.hook || "", outline: draft.main_content || "", platforms: draft.platforms?.length ? draft.platforms : ["TikTok"], language: lang }),
+        },
+        workspaceId,
+      );
+      if (!response.ok) throw new Error();
+      const { idea } = await response.json();
+      const { main_content: mainContent } = createBrainstormIdeaPayload({ ...idea, title: draft.title }, { captionsLabel: t("platformCaptions") });
+      return { hook: idea.hook, mainContent };
+    } catch {
+      notify(lang === "en" ? "AI could not expand this idea. Try again." : "AI chưa phát triển được ý tưởng này. Thử lại nhé.");
+      return null;
+    }
+  };
+  const openIdeaInPipeline = (ideaId) => {
+    window.history.pushState({}, "", "/pipeline");
+    setView("pipeline");
+    setPendingOpenIdeaId(ideaId);
   };
   const copyBrainstormScript = async (text) => {
     try {
@@ -2612,8 +2774,8 @@ export default function App() {
     ["audio", "♫", t("audio")],
     ["reference", "⌘", t("reference")],
     ["brainstorm", "✦", t("brainstorm")],
-    ["operations", "◈", "Operations"],
-    ...(isAdmin ? [["admin", "⚙", "Admin"]] : []),
+    // Operations is still a raw admin tool; keep it out of the creator's navigation.
+    ...(isAdmin ? [["operations", "◈", "Operations"], ["admin", "⚙", "Admin"]] : []),
   ];
   if (!workspaceId)
     return (
@@ -2889,6 +3051,21 @@ export default function App() {
                   </select>
                 </div>
               </div>
+              <form className="quick-capture" onSubmit={quickCapture}>
+                <span aria-hidden="true">＋</span>
+                <input
+                  ref={quickCaptureRef}
+                  value={quickTitle}
+                  onChange={(event) => setQuickTitle(event.target.value)}
+                  maxLength={240}
+                  aria-label={t("quickCapture")}
+                  placeholder={t("quickCapturePlaceholder")}
+                />
+                <kbd>N</kbd>
+                <button type="submit" className="primary-btn" disabled={!quickTitle.trim()}>
+                  {t("quickCaptureAdd")} {pipelineColumnTitles[activePipelineStatusValues[0]] || ""}
+                </button>
+              </form>
               <div className="pipeline-subtools">
                 <span className="drag-hint">↕ {t("dragHint")}</span>
                 <span className="column-order-hint">↔ {t("reorderColumnsHint")}</span>
@@ -3384,6 +3561,10 @@ export default function App() {
             onRun={runBrainstorm}
             onRetry={() => lastBrainstormRequest && runBrainstorm(lastBrainstormRequest.brief, lastBrainstormRequest.format, lastBrainstormRequest.duration, lastBrainstormRequest.platforms)}
             onSaveIdea={saveBrainstormIdea}
+            onOpenIdea={openIdeaInPipeline}
+            onNotify={notify}
+            columns={activePipelineStatusValues.map((status) => ({ status, title: pipelineColumnTitles[status] || status }))}
+            conceptOptions={conceptOptions}
             onCopy={copyBrainstormScript}
             onRestore={(entry) => { setBrainstorm(entry.ideas || []); setBrainstormSource(entry.source || "ai"); setBrainstormError(entry.source === "demo" ? (lang === "en" ? "This is a saved local demo." : "Đây là bản demo local đã lưu.") : ""); }}
           />
@@ -3413,6 +3594,7 @@ export default function App() {
           }}
           onSave={updateIdea}
           onDelete={deleteIdea}
+          onExpand={expandIdea}
         />
       )}
       {ideaOpen && (
