@@ -4,17 +4,20 @@
 Provide a single web workspace that replaces the shared content spreadsheet with a persistent production pipeline, audio library, production reference library, and server-side multi-platform AI brainstorm.
 
 ## Tech Stack
-- Frontend: React 18+, TypeScript-ready JSX, Vite, CSS tokens.
+- Frontend: React 19, JSX, Vite, CSS theme tokens (light and dark).
 - Backend: Python 3.11+, FastAPI, Pydantic, Uvicorn, httpx.
-- Database: Supabase Free PostgreSQL accessed only by the backend service-role key.
+- Database and auth: Supabase PostgreSQL and Auth. The backend verifies each bearer token and calls
+  Supabase with the signed-in user's JWT and the publishable key, so row-level security applies to
+  every read and write, imports included. The secret key stays on the server and is used only for
+  the global admin views and the legacy single-password mode, never for a signed-in user's data.
 - Deployment: one Render Free Web Service serving `frontend/dist` and `/api/*`.
 - AI: any OpenAI-compatible Responses API (`LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`).
 
 ## Project Structure
 - `frontend/` - React/Vite client build.
 - `backend/app/main.py` - FastAPI routes, validation, Supabase repository, memory fallback, AI proxy.
-- `supabase/schema.sql` - PostgreSQL schema and RLS enablement.
-- `supabase/seed.sql` - sample data generated from `sheet-data.json`.
+- `supabase/migrations/` - schema history; `supabase/setup.sql` concatenates them for a new project.
+- `supabase/demo_seed.sql` - English demo workspace; `supabase/seed.sql` - legacy sample data from `sheet-data.json`.
 - `tests/` and `backend/tests/` - frontend data and backend behavior tests.
 
 ## Success Criteria
@@ -61,3 +64,15 @@ owner Auth UUID plus ownership of the selected destination workspace. It never
 assigns old content automatically. Unconfigured local development fails closed.
 Verification: API tests with fake Supabase, isolated PostgreSQL RLS/RPC tests,
 frontend tests/build and browser flows if available. Never mutate live data in tests.
+
+## Later additions
+- Quick capture: `N` focuses a one-line input above the board; the card is added optimistically and
+  rolled back if the save fails.
+- `POST /api/brainstorm/expand` turns an idea card into a hook, numbered beats and per-platform
+  captions; the client fills the form and saves only when the user confirms.
+- Brainstorm results can be saved to a chosen column and concept, one at a time or all at once.
+- Board, Calendar and Table are three views of the same filtered ideas.
+- Drag and drop updates the card immediately and reverts on failure. The backend caches verified
+  sessions (60 s) and workspace roles (30 s), pools its Supabase connection and reads the state
+  tables in parallel.
+- Light and dark themes from one set of color tokens; a phone layout with a bottom tab bar.
