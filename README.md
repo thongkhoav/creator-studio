@@ -71,6 +71,15 @@ running it. Without Supabase the backend falls back to an in-memory store loaded
 Rollback scripts live in `supabase/rollback/` and are applied manually. Never edit a migration that
 has already run; add a new one.
 
+### Demo workspace
+
+`supabase/demo_seed.sql` creates an English workspace called "Creator Studio Demo" with 28 ideas
+across all five pipeline columns, 12 audio tracks, platform presets, shortcuts, SOPs, concepts and
+two brainstorm results. Dates are relative to the day you run it. Sign up once in the app, put that
+email in the `demo_email` line, and run the file in the SQL editor. All rows belong to the new
+workspace, so it does not touch other workspaces. Edit the content in `supabase/demo_seed.py` and
+regenerate with `python3 supabase/demo_seed.py`.
+
 ## Deploy
 
 `render.yaml` defines one Render web service: it builds the React app into `frontend/dist`, and
