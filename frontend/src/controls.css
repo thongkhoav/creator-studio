@@ -191,3 +191,65 @@ textarea.ai-filled { border-color:var(--c-6b7d3d); box-shadow:0 0 0 3px rgb(215 
 .table-platforms > span { padding:0; background:transparent; }
 /* When the panel head stacks, the toolbar's 720px flex-basis turned into height. */
 @media (max-width:1050px) { .pipeline-panel .view-tools { flex:0 0 auto; } }
+
+/* ---- Phones: bottom tab bar instead of a sidebar ---- */
+.nav-short { display:none; }
+.touch-only { display:none; }
+@media (hover:none) and (pointer:coarse) {
+  .touch-only { display:block; }
+  .idea-card-actions select { width:100%; min-height:36px; }
+}
+@media (max-width:720px) {
+  .app-shell { display:block; }
+  .sidebar {
+    position:fixed; z-index:40; left:0; right:0; bottom:0; top:auto;
+    width:auto; height:auto; flex-direction:row;
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+    border-right:0; border-top:1px solid var(--line);
+    background:var(--panel); box-shadow:0 -8px 24px rgb(0 0 0 / .12);
+  }
+  .brand, .sidebar-footer { display:none; }
+  .nav-list { display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:4px; width:100%; }
+  .nav-item { flex-direction:column; justify-content:center; gap:3px; padding:7px 4px; min-height:52px; border-radius:10px; }
+  .nav-item > span:first-child { font-size:18px; height:22px; line-height:22px; }
+  .nav-item .nav-short { display:block; width:auto; font-size:11px; line-height:1.1; text-align:center; white-space:nowrap; }
+  .nav-item b { display:none; }
+  .main-content { max-width:none; padding:0 14px calc(88px + env(safe-area-inset-bottom)); }
+
+  /* One compact top row: workspace on the left, theme / language / account on the right */
+  .topbar { flex-wrap:nowrap; height:56px; min-height:0; padding:0; gap:8px; }
+  .breadcrumb { min-width:0; flex:1; }
+  .breadcrumb > i, .breadcrumb > strong, .workspace-switch > span, .language-switch > span { display:none; }
+  .workspace-switch, .workspace-switch select { min-width:0; max-width:100%; }
+  .top-actions { flex-shrink:0; gap:6px; }
+  .top-actions > .language-switch { display:none; }
+  .account-popover .account-language { display:grid; }
+  .page-heading h1 { font-size:24px; }
+  .view { padding-top:16px; }
+  .page-header h1 { font-size:24px; }
+  .page-actions .import-btn { display:none; }
+
+  /* Swipe through columns one at a time */
+  .kanban { grid-template-columns:repeat(var(--pipeline-column-count, 5), 84%); scroll-snap-type:x mandatory; padding:12px; }
+  .kanban-col { scroll-snap-align:start; }
+  .pipeline-subtools { padding:8px 12px 0; }
+
+  .idea-drawer { width:100vw; padding:20px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .toast { left:14px; right:14px; bottom:calc(84px + env(safe-area-inset-bottom)); }
+}
+
+/* Fingers need bigger targets than a mouse */
+@media (pointer:coarse) {
+  .view-toggle button { min-height:38px; }
+  .close-btn { min-width:40px; min-height:40px; }
+  .calendar-idea { min-height:32px; }
+  .calendar-toolbar button { min-width:40px; min-height:40px; }
+  .pagination button, [aria-label="Previous page"], [aria-label="Next page"], [aria-label^="Page "] { min-width:40px; min-height:40px; }
+  .table-edit { min-height:36px; }
+  .select-visible, .column-title-edit { min-height:36px; }
+}
+
+.account-language { display:none; gap:6px; margin:8px 0 0; font-size:12px; color:var(--muted); }
+.account-language select { width:100%; min-height:36px; }
+/* The board now scrolls with the page, so keep the navigation in view on wider screens. */
+@media (min-width:721px) { .sidebar { position:sticky; top:0; height:100dvh; overflow-y:auto; } }
