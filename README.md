@@ -73,7 +73,7 @@ has already run; add a new one.
 
 ### Demo workspace
 
-`supabase/demo_seed.sql` creates an English workspace called "Creator Studio Demo" with 28 ideas
+`supabase/demo_seed.sql` creates an English workspace called "Rio Studio" (`WORKSPACE_NAME` in the generator) with 28 ideas
 across all five pipeline columns, 12 audio tracks, platform presets, shortcuts, SOPs, concepts and
 two brainstorm results. Dates are relative to the day you run it. Sign up once in the app, put that
 email in the `demo_email` line, and run the file in the SQL editor. All rows belong to the new
