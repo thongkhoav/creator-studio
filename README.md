@@ -42,9 +42,10 @@ uvicorn backend.app.main:app --reload --port 4173
 Open http://localhost:4173. For frontend hot reload, run `npm --prefix frontend run dev` and proxy
 `/api` to the FastAPI port.
 
-Without Supabase settings the backend uses an in-memory store loaded from `sheet-data.json`
-(sample data), which is enough to try the UI. Local password mode needs `AUTH_MODE=legacy`,
-`APP_PASSWORD` and a long random `APP_SESSION_SECRET`.
+The web app signs in with Supabase Auth, so set up a Supabase project (see Database) before
+running it. Without Supabase the backend falls back to an in-memory store loaded from
+`sheet-data.json` (sample data) with a password session (`AUTH_MODE=legacy`, `APP_PASSWORD`,
+`APP_SESSION_SECRET`); that path is used by the API tests, and the UI does not support it yet.
 
 ## Configuration
 
