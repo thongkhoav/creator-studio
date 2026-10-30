@@ -172,6 +172,8 @@ const COPY = {
     dragHint: "Kéo card sang cột để đổi trạng thái",
     retry: "Thử lại",
     demoMode: "DEMO LOCAL · AI chưa kết nối",
+    trackUsed: "Đã dùng",
+    trackUnused: "Chưa dùng",
     syncLoading: "Đang đồng bộ",
     syncConnected: "Đã kết nối",
     syncError: "Đồng bộ lỗi",
@@ -271,6 +273,8 @@ const COPY = {
     dragHint: "Drag a card to another column to change status",
     retry: "Retry",
     demoMode: "LOCAL DEMO · AI unavailable",
+    trackUsed: "Used",
+    trackUnused: "Unused",
     syncLoading: "Syncing",
     syncConnected: "Connected",
     syncError: "Sync error",
@@ -3241,7 +3245,7 @@ export default function App() {
                     <span
                       className={`audio-status ${track.status === "Đã dùng" ? "used" : ""}`}
                     >
-                      {track.status}
+                      {track.status === "Đã dùng" ? t("trackUsed") : t("trackUnused")}
                     </span>
                     {track.audio_url && (
                       <a
