@@ -1,0 +1,1 @@
+drop table if exists public.production_sops; drop table if exists public.editing_shortcuts; drop table if exists public.config_presets; drop table if exists public.ideas; drop table if exists public.tracks;

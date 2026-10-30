@@ -1,0 +1,332 @@
+{
+  "ideas": [
+    {
+      "title": "A day in the life of a web developer",
+      "status": "Đã đăng",
+      "concept": "Vlog",
+      "priority": 1,
+      "publish_date": "2026-01-10",
+      "hook": "6:30 AM, first coffee, first bug.",
+      "main_content": "Morning routine, stand-up, focus block, evening walk.",
+      "audio_sfx": "",
+      "hashtag": [
+        "#dayinmylife",
+        "#developer"
+      ],
+      "reference_url": "",
+      "notes": ""
+    },
+    {
+      "title": "5 VS Code extensions I use every day",
+      "status": "Đã đăng",
+      "concept": "Listing",
+      "priority": 2,
+      "publish_date": "2026-01-17",
+      "hook": "Number 3 saves me an hour a week.",
+      "main_content": "Show each extension in a 5-second clip.",
+      "audio_sfx": "",
+      "hashtag": [
+        "#vscode",
+        "#coding"
+      ],
+      "reference_url": "",
+      "notes": ""
+    },
+    {
+      "title": "When the bug only happens in production",
+      "status": "Đã đăng",
+      "concept": "IT meme",
+      "priority": 1,
+      "publish_date": "2026-01-24",
+      "hook": "",
+      "main_content": "Classic meme format with screen recording.",
+      "audio_sfx": "",
+      "hashtag": [
+        "#programmerhumor"
+      ],
+      "reference_url": "",
+      "notes": ""
+    },
+    {
+      "title": "My desk setup on a budget",
+      "status": "Edit",
+      "concept": "Setup",
+      "priority": 2,
+      "publish_date": null,
+      "hook": "Everything here costs less than one monitor.",
+      "main_content": "Pan across the desk, price tags as text overlays.",
+      "audio_sfx": "",
+      "hashtag": [
+        "#desksetup"
+      ],
+      "reference_url": "",
+      "notes": ""
+    },
+    {
+      "title": "How I plan a week of content in one hour",
+      "status": "Quay video",
+      "concept": "Listing",
+      "priority": 1,
+      "publish_date": null,
+      "hook": "One hour on Sunday, seven videos.",
+      "main_content": "Walk through the pipeline board.",
+      "audio_sfx": "",
+      "hashtag": [
+        "#contentcreator"
+      ],
+      "reference_url": "",
+      "notes": ""
+    },
+    {
+      "title": "Trending sound: what I expected vs what I got",
+      "status": "Kịch bản",
+      "concept": "Bắt trend",
+      "priority": 2,
+      "publish_date": null,
+      "hook": "",
+      "main_content": "Split screen with the trending audio.",
+      "audio_sfx": "",
+      "hashtag": [],
+      "reference_url": "",
+      "notes": ""
+    },
+    {
+      "title": "Learning a new framework in 7 days",
+      "status": "Kịch bản",
+      "concept": "Vlog",
+      "priority": 2,
+      "publish_date": null,
+      "hook": "Day 1: I understand nothing.",
+      "main_content": "Daily 10-second check-ins.",
+      "audio_sfx": "",
+      "hashtag": [
+        "#learntocode"
+      ],
+      "reference_url": "",
+      "notes": ""
+    },
+    {
+      "title": "Small habits that keep me focused",
+      "status": "Lên ý tưởng",
+      "concept": "Mental Health",
+      "priority": 3,
+      "publish_date": null,
+      "hook": "",
+      "main_content": "",
+      "audio_sfx": "",
+      "hashtag": [],
+      "reference_url": "",
+      "notes": ""
+    },
+    {
+      "title": "Stretching routine for long coding days",
+      "status": "Lên ý tưởng",
+      "concept": "Sức khỏe",
+      "priority": 3,
+      "publish_date": null,
+      "hook": "",
+      "main_content": "",
+      "audio_sfx": "",
+      "hashtag": [],
+      "reference_url": "",
+      "notes": ""
+    },
+    {
+      "title": "Rainy evening coding session",
+      "status": "Lên ý tưởng",
+      "concept": "Capcut mood",
+      "priority": 3,
+      "publish_date": null,
+      "hook": "",
+      "main_content": "Slow cinematic shots, lo-fi music.",
+      "audio_sfx": "",
+      "hashtag": [],
+      "reference_url": "",
+      "notes": ""
+    },
+    {
+      "title": "Explaining APIs with a restaurant analogy",
+      "status": "Lên ý tưởng",
+      "concept": "Khác",
+      "priority": 2,
+      "publish_date": null,
+      "hook": "The waiter is the API.",
+      "main_content": "",
+      "audio_sfx": "",
+      "hashtag": [
+        "#techexplained"
+      ],
+      "reference_url": "",
+      "notes": ""
+    },
+    {
+      "title": "What I would tell myself on day one of coding",
+      "status": "Lên ý tưởng",
+      "concept": "Life moment",
+      "priority": 2,
+      "publish_date": null,
+      "hook": "",
+      "main_content": "",
+      "audio_sfx": "",
+      "hashtag": [],
+      "reference_url": "",
+      "notes": ""
+    }
+  ],
+  "tracks": [
+    {
+      "title": "Upbeat Lo-fi Loop",
+      "artist_source": "Royalty-free library",
+      "mood_genre": "Chill",
+      "status": "Chưa dùng",
+      "audio_url": "",
+      "notes": "Good for desk setup videos"
+    },
+    {
+      "title": "Morning Acoustic",
+      "artist_source": "Royalty-free library",
+      "mood_genre": "Không lời",
+      "status": "Đã dùng",
+      "audio_url": "",
+      "notes": ""
+    },
+    {
+      "title": "Energetic Synth Intro",
+      "artist_source": "Royalty-free library",
+      "mood_genre": "Sôi động",
+      "status": "Chưa dùng",
+      "audio_url": "",
+      "notes": "Hook in first 2 seconds"
+    },
+    {
+      "title": "Soft Piano Background",
+      "artist_source": "Royalty-free library",
+      "mood_genre": "Không lời",
+      "status": "Chưa dùng",
+      "audio_url": "",
+      "notes": ""
+    },
+    {
+      "title": "Funny Pop Stinger",
+      "artist_source": "Royalty-free library",
+      "mood_genre": "Hài",
+      "status": "Chưa dùng",
+      "audio_url": "",
+      "notes": "Meme punchlines"
+    },
+    {
+      "title": "Rainy Night Ambience",
+      "artist_source": "Royalty-free library",
+      "mood_genre": "Buồn/Tâm trạng",
+      "status": "Chưa dùng",
+      "audio_url": "",
+      "notes": ""
+    }
+  ],
+  "config_presets": [
+    {
+      "group_name": "Thumbnail Text",
+      "attribute": "Font",
+      "value": "Bold sans-serif, white, size 70, centered",
+      "notes": "Keep inside the safe zone",
+      "link_example": ""
+    },
+    {
+      "group_name": "Audio/BGM",
+      "attribute": "BGM volume",
+      "value": "15–20%",
+      "notes": "Voice stays on top",
+      "link_example": ""
+    },
+    {
+      "group_name": "Audio/BGM",
+      "attribute": "Voice volume",
+      "value": "100%",
+      "notes": "",
+      "link_example": ""
+    },
+    {
+      "group_name": "Size",
+      "attribute": "Video",
+      "value": "1080 × 1920, 30 fps",
+      "notes": "Vertical for Shorts/Reels/TikTok",
+      "link_example": ""
+    }
+  ],
+  "editing_shortcuts": [
+    {
+      "category": "Editing",
+      "key_combo": "S",
+      "action": "Split clip at playhead",
+      "notes": ""
+    },
+    {
+      "category": "Editing",
+      "key_combo": "V",
+      "action": "Select tool",
+      "notes": ""
+    },
+    {
+      "category": "Editing",
+      "key_combo": "Shift + D",
+      "action": "Enable / disable clip",
+      "notes": ""
+    },
+    {
+      "category": "Playback",
+      "key_combo": "Space",
+      "action": "Play / pause",
+      "notes": ""
+    },
+    {
+      "category": "Timeline",
+      "key_combo": "Cmd + =",
+      "action": "Zoom in timeline",
+      "notes": ""
+    },
+    {
+      "category": "Timeline",
+      "key_combo": "Cmd + -",
+      "action": "Zoom out timeline",
+      "notes": ""
+    }
+  ],
+  "production_sops": [
+    {
+      "type": "CORE_RULE",
+      "category_or_profile": "Shoot for speed first",
+      "recommended_mode": "Use the camera's normal color profile for most videos so they can be edited on a phone right away.",
+      "do_instructions": "Lock exposure and white balance before recording.",
+      "dont_instructions": "Do not switch profiles in the middle of a series.",
+      "camera_settings": "",
+      "post_process": ""
+    },
+    {
+      "type": "CAMERA_PROFILE",
+      "category_or_profile": "Indoor desk shots",
+      "recommended_mode": "Normal profile, 4K 30 fps",
+      "do_instructions": "Use a soft key light at 45 degrees.",
+      "dont_instructions": "Avoid mixing daylight and warm bulbs.",
+      "camera_settings": "Shutter 1/60, ISO ≤ 800",
+      "post_process": "Light contrast boost"
+    },
+    {
+      "type": "CAMERA_PROFILE",
+      "category_or_profile": "Outdoor walking vlog",
+      "recommended_mode": "Normal profile, stabilization on",
+      "do_instructions": "Keep the horizon level; walk heel to toe.",
+      "dont_instructions": "Do not shoot into direct sun without ND.",
+      "camera_settings": "Shutter 1/60 with ND filter",
+      "post_process": "Warm tint +5"
+    },
+    {
+      "type": "FILMING_TECHNIQUE",
+      "category_or_profile": "Hook in the first second",
+      "recommended_mode": "Start on movement or a bold text overlay",
+      "do_instructions": "Show the result first, then how.",
+      "dont_instructions": "No slow intros or logos.",
+      "camera_settings": "",
+      "post_process": ""
+    }
+  ]
+}

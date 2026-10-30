@@ -1,0 +1,10 @@
+drop table if exists public.media_assets;
+drop table if exists public.publishing_checklist_items;
+drop table if exists public.platform_presets;
+drop table if exists public.content_schedules;
+drop table if exists public.content_variants;
+drop function if exists public.create_workspace(text);
+drop function if exists public.workspace_role(uuid);
+drop function if exists public.is_workspace_member(uuid);
+drop table if exists public.workspace_members;
+drop table if exists public.workspaces;

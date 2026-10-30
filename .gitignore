@@ -1,0 +1,13 @@
+.data/
+*.sqlite3
+.env
+.env.*
+!.env.example
+__pycache__/
+.DS_Store
+
+.venv/
+node_modules/
+frontend/node_modules/
+frontend/dist/
+supabase/.temp/
